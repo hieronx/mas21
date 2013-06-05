@@ -1,0 +1,194 @@
+% netid: yvanpelt , student no 4230264
+init module {
+	beliefs{
+		% Initially, we are going nowhere.
+		navigation(none, none).
+		
+		% Initial status that gets changed instantly
+		status(100, 0, 0, none).
+		
+		% DO NOT REMOVE OR MODIFY the pickupWeapons predicate nor the maxLevelOfArmour predicate!
+		% We use this to keep track of the list of weapons that the bot picked up so far. 
+		pickedupWeapons([]).
+		% We use this to keep track of the value of armour. 
+		maxLevelOfArmour(0).
+		
+		destination(none). % going nowhere
+		
+		
+	}
+	goals{
+		get5Stars. % possibly attained, slightly philosophical
+	}
+	program{
+		% UNUSED
+		% The base percept provides thfe location of all team bases. It is a "send once" percept.
+		% The base position is the position where the flag is located, which we store in the belief base.
+		%forall bel( percept(base(Team, UnrealID)) ) do insert( flagPosition(UnrealID) ).
+
+		% Send once percepts:
+		% Self percept
+		forall bel( percept(self(UnrealID, NickName, Team)) ) do insert( self(UnrealID, NickName, Team) ).
+		
+		% forall bel( percept(navPoint(UnrealID, Position, NeighsUnrealID) ) ) do insert( navPoint(UnrealID, Position, NeighsUnrealID)).
+		% Pickups
+		forall bel( percept(pickup(UnrealID, Label, ItemType)) ) do insert( pickup(UnrealID, Label, ItemType) ).
+		% Flag base percept, unused but it's a requirement.
+		forall bel( percept(base(Team, UnrealID)) ) do insert( base(Team, UnrealID) ).
+		
+		% game info, unused but it's a requirement
+		forall bel( percept(game(Gametype, Map, GoalScore, TimeLimit)) ) do insert (game(Gametype, Map, GoalScore, TimeLimit)).
+		
+	}
+	actionspec{
+		navigate(Destination) {
+			pre{ destination(PrevDestination) }
+			post{ not(destination(PrevDestination)), destination(Destination) }
+		}
+		stop {
+			pre{ destination(PrevDestination) }
+			post{ destination(none) }
+		}
+		respawn {
+			% the andrenaline is kept
+			% these things come in using percepts too but that may take a while and respawn is instant
+			% so the bot will otherwise try to do it multiple times
+			pre {
+				status(OldHealth, OldArmour, Andrenaline, OldCombo),
+				destination(OldDest),
+				navigation(OldNavState, OldNavDest)
+			 }
+			post {
+				% reset the status, keeping the andrenaline
+				not(status(OldHealth, OldArmour, Andrenaline, OldCombo)),
+				status(100, 0, Andrenaline, none),
+				not(destination(OldDest)),
+				destination(none),
+				not(navigation(OldNavState, OldNavDest)),
+				navigation(waiting, none)
+			}
+		}
+	}
+}
+
+main module {
+	knowledge {
+		% andrenaline is always useful
+		usefulItem(andrenaline, andrenaline).
+		% pickup health, the different pills have different limits
+		usefulItem(health, mini_health) :- status(Health, _,_,_), Health < 199.
+		% don't use the super health pack for just 20 health
+		usefulItem(health, super_health) :- status(Health, _, _, _), Health < 180.
+		usefulItem(health, health) :- status(Health, _, _, _), Health < 100.
+		usefulItem(armor, small_armor) :- status(_, Armour, _, _), Armour < 50.
+		usefulItem(armor, super_armor) :- status(_, Armour, _, _), Armour < 150.
+		% pick up weapons we don't have yet
+		usefulItem(weapon, ItemType) :- not(weapon(ItemType,_,_)).
+		% pick up all the ammo when we're not full yet
+		usefulItem(ammo, assault_rifle) :- weapon(assault_rifle, Ammo, AltAmmo), (Ammo < 200; AltAmmo < 8).
+		usefulItem(ammo, bio_rifle) :- weapon(bio_rifle, Ammo, _), Ammo < 100.
+		usefulItem(ammo, shock_rifle) :- weapon(shock_rifle, Ammo, _), Ammo < 50.
+		usefulItem(ammo, minigun) :- weapon(minigun, Ammo, _), Ammo < 300.
+		usefulItem(ammo, link_gun) :- weapon(link_gun, Ammo, _), Ammo < 220.
+		usefulItem(ammo, flak_cannon) :- weapon(flak_cannon, Ammo, _), Ammo < 35.
+		usefulItem(ammo, rocket_launcher) :- weapon(rocket_launcher, Ammo, _), Ammo < 30.
+		usefulItem(ammo, lightning_gun) :- weapon(lightning_gun, Ammo, _), Ammo < 40.
+		usefulItem(ammo, sniper_rifle) :- weapon(sniper_rifle, Ammo, _), Ammo < 35.
+	}
+	program{
+		% if we're stuck, respawn
+		if bel( navigation(stuck,_) ) then respawn.
+		
+		% when we've been fragged and not handled it yet (kept track of using respawnedAfter)
+		% we reset the status
+		% reset health, insert respawnedafter
+		% remove all the weapons and insert the shield gun and assault rifle
+		% in insert()/delete() you can't use things like weapon(_,_,_), so we need to use forall
+		if bel( fragged(Time, _, VictimID, _), self(VictimID, _, _), not(respawnedAfter(Time)),
+		status(Health, Armour, Andrenaline, Combo) ) then {
+			forall bel(weapon(WeaponType, Ammo, AltAmmo)) do delete(weapon(WeaponType, Ammo, AltAmmo)).
+			if true then delete(status(Health, Armour, Andrenaline, Combo))
+				+ insert(respawnedAfter(Time), status(100, 0, Andrenaline, none),
+					% only keep the shield gun and assault rifle
+					weapon(shield_gun,1,100),
+					weapon(assault_rifle,100,4)
+			).
+		}
+		
+		% go to a destination if it didn't work the first time.
+		if bel( navigation(waiting, none), not(destination(none)), destination(Dest) ) then
+			navigate(Dest).
+		
+		% remove the destination
+		if bel( navigation(reached, _), not(destination(none)), destination(OldDest) ) then
+			delete(destination(OldDest)) + insert(destination(none)).
+		
+		% if there's a useful item in sight and we weren't going anywhere important, go to it
+		if bel( wandering, item(UnrealID, Label, ItemType, Position), usefulItem(Label, ItemType))
+			then delete(wandering) + navigate(Position).
+		
+		% if there's a useful item in sight and we're not going anywhere at all, go to it
+		if bel( not(wandering), destination(none), item(UnrealID, Label, ItemType, Position), usefulItem(Label, ItemType))
+			then navigate(Position).
+		
+		% if there's no item, go somewhere sort-of unimportant
+		if bel( destination(none), pickup(UnrealID, Label, ItemType), usefulItem(Label, ItemType))
+			then insert(wandering) + navigate(UnrealID).
+
+		
+		% if there's no useful item anywhere, go somewhere really unimportant
+		if bel( destination(none), pickup(UnrealID, _,_) ) then insert(wandering) + navigate(UnrealID).
+	}
+}
+
+event module {
+	program {	
+		% Update the navigation state of the bot that is controlled. navigation is a "send on change" percept.
+		forall bel( navigation(OldStatus, OldDest),  percept(navigation(Status, Destination)) )
+			do delete( navigation(OldStatus, OldDest) ) + insert( navigation(Status, Destination) ).
+
+		% add flagpositions from the bases
+		if bel( not(navigation(navigating,_)), flagPosition(UnrealLocID) ) then navigate(UnrealLocID).
+
+		% DO NOT REMOVE OR MODIFY any of the percept rules below!
+		% We use these to keep track of weapons picked up and the level of armour.	
+		forall bel( percept(weapon(Weapon,_,_)) ) do {
+			if bel( pickedupWeapons(PUW), not(member(Weapon, PUW)) ) 
+				then insert( not(pickedupWeapons(PUW)), pickedupWeapons([Weapon|PUW]) ).
+		}
+		% Next rule keeps track of the maximum level of armour achieved.
+		forall bel( percept(status(_,Armour,_,_)), maxLevelOfArmour(LastMaxArmour), Armour > LastMaxArmour )
+			do delete( maxLevelOfArmour(LastMaxArmour) ) + insert( maxLevelOfArmour(Armour) ).
+		
+		% Status percept
+		forall bel( status(OldHealth, OldArmour, OldAndrenaline, OldCombo), 
+					percept(status(Health, Armour, Andrenaline, Combo)) )
+					do delete( status(OldHealth, OldArmour, OldAndrenaline, OldCombo) )
+					 + insert(status(Health, Armour, Andrenaline, Combo)).
+		
+		% fragged percepts
+		% for now, only save the fraggeds that are us, because we don't need the others (yet)
+		forall bel( percept(fragged(Time, KillerID, VictimID, WeaponType)),	self(VictimID, _, _)
+				  , not(fragged(Time, KillerID, VictimID, WeaponType)))
+				  do insert(fragged(Time, KillerID, VictimID, WeaponType)).
+		
+		% updated ammo
+		forall bel( percept(weapon(WeaponType, Ammo, AltAmmo)), weapon(WeaponType, OldAmmo, OldAltAmmo))
+			do delete(weapon(WeaponType, OldAmmo, OldAltAmmo)) + insert(weapon(WeaponType, Ammo, AltAmmo)).
+		
+		% weapons added
+		forall bel( percept(weapon(WeaponType, Ammo, AltAmmo)), not(weapon(WeaponType, _, _)))
+			do insert(weapon(WeaponType, Ammo, AltAmmo)).
+		
+		% weapons removed
+		forall bel( percept(not(WeaponType, _, _)), weapon(WeaponType, Ammo, AltAmmo))
+			do delete(weapon(WeaponType, Ammo, AltAmmo)).
+			
+		% see item percept
+		forall bel( percept(item(UnrealID, Label, ItemType, Position)), not(item(UnrealID, Label, ItemType, Position)) )
+			do insert(item(UnrealID, Label, ItemType, Position)).
+		forall bel( percept(not(item(UnrealID, Label, ItemType, Position))), item(UnrealID, Label, ItemType, Position))
+			do delete(item(UnrealID, Label, ItemType, Position)).
+
+	}
+}

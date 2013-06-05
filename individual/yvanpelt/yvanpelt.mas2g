@@ -1,0 +1,24 @@
+% netid: yvanpelt , student no 4230264
+environment {
+	env = "goal-ut2004-environment-3.5.2-SNAPSHOT.jar".
+	init = [ 	
+		botNames = ["Yorick"],
+		visualizer = "rmi://127.0.0.1:1099",
+		botServer = "ut://127.0.0.1:3000",
+		controlServer = "ut://127.0.0.1:3001",
+		logLevel = "WARNING", 
+		skill = 5,
+		team = "red",
+		skin = "BotA"
+
+	].
+}
+
+agentfiles {
+	"yvanpelt.goal" [name=agent] .
+}
+
+launchpolicy {
+    when [type=bot,max=1]@env do launch *:agent .
+}
+
