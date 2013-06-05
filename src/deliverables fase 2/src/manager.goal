@@ -1,0 +1,222 @@
+init module {
+	beliefs {
+    % Initialize score to 0 kills, 0 deaths and 0 suicides
+    score(0, 0, 0).
+
+    % Both flags are initially at home, its own base
+    flagState(red, home).
+    flagState(blue, home).
+
+    % Set the initial scenario to default
+    scenario(default).
+	}
+
+	actionspec {
+	}
+}
+main module {
+	knowledge {
+    % Default score: 1 flag capturer, 1 flag defender, 1 defender and 1 assassin
+    roleNeeded(default, flag_capturer, 1).
+    roleNeeded(default, flag_defender, 1).
+    roleNeeded(default, defender, 1).
+    roleNeeded(default, assassin, 1).
+
+    % When our flag has been taken: 1 flag capturer and 3 attackers
+    roleNeeded(ourFlagTaken, flag_capturer, 1).
+    roleNeeded(ourFlagTaken, attacker, 3).
+
+    % When we have taken their flag: 1 flag capturer and 3 defenders
+    roleNeeded(theirFlagTaken, flag_capturer, 1).
+    roleNeeded(theirFlagTaken, defender, 2).
+    roleNeeded(theirFlagTaken, flag_defender, 1).
+
+    % When both flags have been taken: 1 flag capturer, 1 defender and 2 attackers
+    roleNeeded(bothFlagsTaken, flag_capturer, 1).
+    roleNeeded(bothFlagsTaken, defender, 1).
+    roleNeeded(bothFlagsTaken, attacker, 2).
+
+    % How many agents are there with this role?
+    countAgentsWithRole(Role, Count) :- aggregate_all(count, role(_, Role), Count).
+
+    % Do we need this role in the current scenario?
+    needRole(Scenario, Role) :- roleNeeded(Scenario, Role, NeededCount), countAgentsWithRole(Role, CurrCount), NeededCount > CurrCount.
+
+
+    % Does this agent have a role not needed in this scenario?
+    uselessAgent(Scenario, Agent) :- role(Agent, Role), roleNeeded(Scenario, Role, NeededCount), countAgentsWithRole(Role, CurrCount), NeededCount < CurrCount.
+    uselessAgent(Scenario, Agent) :- role(Agent, Role), not(canHaveRole(Scenario, Agent, Role)).
+    uselessAgent(Scenario, Agent) :- role(Agent, Role), not(roleNeeded(Scenario, Role, _)).
+    uselessAgent(_, Agent) :- agent(Agent), not(role(Agent, _)), not(me(Agent)).
+
+    % Calculate distance from point A to point B
+    manhattanDistance(A, B, Distance) :-
+      location(X1, Y1, _) = A,
+      location(X2, Y2, _) = B,
+      Dx is abs(X1 - X2), Dy = abs(Y1 - Y2),
+      Distance is Dx + Dy.
+
+    % There are two teams, red and blue
+    team(red).
+    team(blue).
+
+    % Is this our own team?
+    ownTeam(Team) :- ownBot(_, _, _, Team).
+
+    % Is this our enemy?
+    otherTeam(Team) :- team(Team), not(ownTeam(Team)).
+
+    % Only the flag carrier can get the flag_capturer role (unless there's no flag carrier)
+    canHaveRole(_, Agent, flag_capturer) :- otherTeam(Team), not(flagState(Team, held)).
+
+    % When the flag is held, only the flag-carrying agent can be the flag carrier
+    canHaveRole(_, Agent, flag_capturer) :- otherTeam(Team), ownBot(Agent, UnrealID, _, _), flag(Team, UnrealID, _).
+
+    % The other roles are free
+    canHaveRole(_, _, Role) :- not(Role = flag_capturer).
+
+    % A list of all agents, not including the manager
+    agentList(Agents) :- findall(X, (agent(X), not(me(X))), Agents).
+
+    % Pair two lists together
+    pairLists(L1, L2, Pairs) :-
+        findall({A,B}, (member(A, L1), member(B, L2)), Pairs).
+
+    % Fill a list with one element
+    fillList(_, 0, []).
+    fillList(Element, Count, [Element|T]) :-
+        Left is Count - 1,
+        fillList(T, Element, Left).
+
+    % Pair an element with a list
+    pairWithList(_, [], []).
+    pairWithList(X, [L0 | T], [[L0, X] | OT]) :-
+      pairWithList(X, T, OT).
+
+    % Remove the head of the pairs
+    headOfPairs([], []).
+    headOfPairs([[H0, _] | T], [H0 | OT]) :-
+      headOfPairs(T, OT).
+
+    % Which agents are the closest to this Location?
+    closestAgents(Location, Agents) :-
+        agentList(InputAgents),
+        pairWithList(Location, InputAgents, PairedList),
+        predsort(compDistance, PairedList, OutputAgents),
+        headOfPairs(OutputAgents, Agents).
+    
+    % Compare the distance of agents W1 and W2
+    compDistance(Comp, A1, A2) :-
+        [Agent1, Location] = A1,
+        [Agent2, Location] = A2,
+        location(Agent1, Location1),
+        location(Agent2, Location2),
+        manhattanDistance(Location1, Location, Distance1),
+        manhattanDistance(Location2, Location, Distance2),
+        (   Distance1 < Distance2 -> Comp = '<'
+        ;   Distance1 > Distance2 -> Comp = '>'
+        ;   compare(Comp, A1, A2)).
+	}
+  program {
+    forall bel( scenario(Scenario), targetWasSent(Defender, FlagCarrier, OtherScenario), not(Scenario = OtherScenario) ) do
+      delete( targetWasSent(Defender, FlagCarrier, OtherScenario) ).
+
+    % If there's a needed role and a useless agent which can have it (that already has a role), update its role
+    if bel( scenario(Scenario), needRole(Scenario, Role), uselessAgent(Scenario, Agent), canHaveRole(Scenario, Agent, Role), role(Agent, OldRole) ) then
+      send(Agent, role(Role))
+      + delete( role(Agent, OldRole) )
+      + insert( role(Agent, Role) ).
+
+    if bel( scenario(Scenario), 
+            otherTeam(OtherTeam), flag(Team, HolderUnrealID, _), ownBot(Agent, HolderUnrealID, _, _),
+            not(role(Agent, flag_capturer)), role(Agent, Role)) then
+      send(Agent, role(flag_capturer))
+      + delete( role(Agent, Role) )
+      + insert( role(Agent, flag_capturer)).
+
+    % If there's a needed role and a useless agent which can have it (that doesn't have any role yet), give it a role
+    if bel( scenario(Scenario), needRole(Scenario, Role), uselessAgent(Scenario, Agent), canHaveRole(Scenario, Agent, Role) ) then
+      send(Agent, role(Role))
+      + insert( role(Agent, Role) ).
+
+    if bel( scenario(theirFlagTaken), role(FlagCarrier, flag_capturer), role(Defender, defender), scenario(Scenario), not(targetWasSent(Defender, FlagCarrier, Scenario)) ) then
+      send(Defender, target(FlagCarrier))
+      + insert( targetWasSent(Defender, FlagCarrier, Scenario) ).
+  }
+}
+
+event module {
+  program {
+    %%%
+     % Information it receives from the agents in the game
+     %%
+
+    % flag percept
+      % If it receives new information about the flag, add it to the belief base
+      forall bel( received( Agent, flag(Team, HolderUnrealID, Position) ), flag(Team, OldHolderUnrealID, OldPosition))
+        do delete( received( Agent, flag(Team, HolderUnrealID, Position) ), flag(Team, OldHolderUnrealID, OldPosition))
+        + insert( flag(Team, HolderUnrealID, Position) ).
+
+      forall bel( received( Agent, flag(Team, HolderUnrealID, Position) ), not(flag(Team , _, _) ) )
+      	do insert( flag(Team, HolderUnrealID, Position) ).
+
+    % status percept
+      % If it receives new information about a players' status, add it to the belief base
+      forall bel( received( Agent, status(Health, Armour, Adrenaline, Combo) ), status(Agent, OldHealth, OldArmour, OldAdrenaline, OldCombo))
+        do delete( received( Agent, status(Health, Armour, Adrenaline, Combo) ), status(Agent, OldHealth, OldArmour, OldAdrenaline, OldCombo))
+        + insert( status(Agent, Health, Armour, Adrenaline, Combo) ).
+
+       forall bel( received( Agent, status(Health, Armour, Andrenaline, Combo) ), not(status(Agent, _, _, _, _)))
+       	do insert( status(Agent, Health, Armour, Andrenaline, Combo) ).
+
+    % location percept
+      % If it receives new information about a players' location, add it to the belief base
+      forall bel( received( Agent, location(Location) ), location(Agent, OldLocation))
+        do delete( received( Agent, location(Location) ), location(Agent, OldLocation))
+        + insert( location(Agent, Location) ).
+
+       forall bel( received( Agent, location(Location) ), not(location(Agent, _)))
+        do insert( location(Agent, Location) ).
+
+    % score percept
+      % If it receives new information about the score, add it to the belief base
+      forall bel( received( Agent, score(Kills, Deaths, Suicides) ), score(OldKills, OldDeaths, OldSuicides))
+        do delete( received( Agent, score(Kills, Deaths, Suicides) ), score(OldKills, OldDeaths, OldSuicides))
+        + insert( score(Kills, Deaths, Suicides) ).
+
+    % game percept
+      if bel( received( Agent, game(GameType, Map, GoalScore, TimeLimit) ) )
+        then delete( received( Agent, game(GameType, Map, GoalScore, TimeLimit) ))
+        + insert( game(GameType, Map, GoalScore, TimeLimit) ).
+
+    % self percept
+      if bel( received( Agent, self(UnrealID, NickName, Team) ) )
+        then delete( received( Agent, self(UnrealID, NickName, Team) ))
+        + insert( ownBot(Agent, UnrealID, NickName, Team) ).
+
+    % flagState (home|held|dropped)
+      % If it receives new information about the flag state, add it to the belief base
+      forall bel( received( Agent, flagState(Team, FlagState) ), flagState(Team, OldFlagState) )
+        do delete( received( Agent, flagState(Team, FlagState) ), flagState(Team, OldFlagState))
+        + insert( flagState(Team, FlagState) ).
+	
+    %%%
+     % How to respond to scenarios which occur
+     %%
+
+    % Our flag has been taken
+      forall bel( ownTeam(Team), flagState(Team, held), scenario(OldScenario), not(scenario(ourFlagTaken)) ) do
+        delete( scenario(OldScenario) )
+  		  + insert( scenario(ourFlagTaken) ).
+    
+    % We have taken their flag
+      forall bel( otherTeam(Team), flagState(Team, held), scenario(OldScenario), not(scenario(theirFlagTaken)) ) do
+        delete( scenario(OldScenario) )
+  		  + insert( scenario(theirFlagTaken) ).
+
+    % Both flags have been taken
+      forall bel( not(flagState(_, home)), not(flagState(_, dropped)), scenario(OldScenario), not(scenario(bothFlagsTaken)) ) do
+        delete( scenario(OldScenario) )
+        + insert( scenario(bothFlagTaken) ).
+  }
+}

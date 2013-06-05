@@ -1,0 +1,136 @@
+event module {
+	program {	
+		% Update the navigation state of the bot that is controlled. navigation is a "send on change" percept.
+		forall bel( navigation(OldStatus, OldDest), percept(navigation(Status, Destination)) )
+			do delete( navigation(OldStatus, OldDest) )
+			+ insert( navigation(Status, Destination) ).
+
+		% for every navigation(stuck,_) percept, increment the stuck counter by one
+		if bel( percept( navigation(stuck, _) ), stuckCounter(Count), NewCount is Count + 1 )
+			then delete( stuckCounter(Count))
+			+ insert( stuckCounter(NewCount) ).
+
+		% for every time the bot isn't receiving a stuck percept, reset the stuck counter to 0
+		if bel( not(percept( navigation(stuck, _) )), stuckCounter(Count), Count > 0 )
+			then delete( stuckCounter(Count) )
+			+ insert( stuckCounter(0) ).
+
+		% Status is a "send on change" percept and thus we check whether the percept being received is different
+		% from the status() stored in our belief base. If that's the case, we remove the old status() and insert the new one.
+		forall bel( status(OldHealth, OldArmour, OldAdrenaline, OldCombo),  percept(status(Health, Armour, Adrenaline, Combo)) )
+			do delete( status(OldHealth, OldArmour, OldAdrenaline, OldCombo) )
+			+ insert( status(Health, Armour, Adrenaline, Combo) )
+			+ sendonce(manager, status(Health, Armour, Adrenaline, Combo) ).
+		
+		% updated ammo
+		forall bel( percept( weapon(WeaponType, Ammo, AltAmmo) ), weapon(WeaponType, OldAmmo, OldAltAmmo))
+			do delete( weapon(WeaponType, OldAmmo, OldAltAmmo))
+			+ insert(weapon(WeaponType, Ammo, AltAmmo)) .
+		
+		% If it percepts a weapon it doesn't have in its belief base, add it
+		forall bel( percept( weapon(WeaponType, Ammo, AltAmmo) ), not(weapon(WeaponType, Ammo, AltAmmo)))
+			do insert( weapon(WeaponType, Ammo, AltAmmo) ).
+
+		% If it doesn't percept a weapon it has in its belief base, remove it
+		forall bel( percept( not(weapon(WeaponType, Ammo, AltAmmo)) ), weapon(WeaponType, Ammo, AltAmmo))
+			do delete( weapon(WeaponType, Ammo, AltAmmo) ).
+		
+		% If it percepts an item it doesn't have in its belief base, add it
+		forall bel( percept( item(UnrealID, Label, ItemType, Position) ), not(item(UnrealID, Label, ItemType, Position)) )
+			do insert( item(UnrealID, Label, ItemType, Position) ).
+
+		% If it doesn't percept an item it has in its belief base, remove it
+		forall bel( percept( not(item(UnrealID, Label, ItemType, Position)) ), item(UnrealID, Label, ItemType, Position))
+			do delete( item(UnrealID, Label, ItemType, Position) ).
+
+		% If the agent itself was fragged and the score was changed, delete the old score from the belief base
+		% and insert the new one.
+		forall bel( percept( score(Kills, Deaths, Suicides) ), score(OldKills, OldDeaths, OldSuicides) )
+			do delete( score(OldKills, OldDeaths, OldSuicides))
+			+ insert( score(Kills, Deaths, Suicides))
+			+ sendonce( manager, score(Kills, Deaths, Suicides) ).
+
+		% If the orientation was changed, delete the old orientation from the belief base
+		% and insert the new one.
+		forall bel( percept( orientation(Location, Rotation, Velocity) ), orientation(LocationOld, RotationOld, VelocityOld) )
+			do delete( orientation(LocationOld, RotationOld, VelocityOld))
+			+ insert( orientation(Location, Rotation, Velocity))
+			+ sendonce( manager, location(Location) ).
+
+		% Keep track of the current weapon
+		forall bel( percept( currentWeapon(WeaponType, FireMode) ), currentWeapon(OldWeaponType, OldFireMode) )
+			do delete( currentWeapon(OldWeaponType, OldFireMode) )
+			+ insert( currentWeapon(WeaponType, FireMode) ).
+
+		% todo: path
+		
+		% todo: logic (iteration)
+		
+		% keep track of the scores of the teams
+		forall bel( percept( teamScore(TeamScore, OpponentTeamScore) ), teamScore(OldTeamScore, OldOpponentTeamScore) )
+			do delete( teamScore(OldTeamScore, OldOpponentTeamScore) )
+			+ insert( teamScore(TeamScore, OpponentTeamScore) ).
+		
+		% keep track of whether the flag is home, taken or dropped
+		forall bel( percept( flagState(Team, FlagState) ), flagState(Team, OldFlagState) )
+			do delete( flagState(Team, OldFlagState) ) +
+			insert( flagState(Team, FlagState) )
+			+ sendonce( manager, flagState(Team, FlagState) ).
+		
+		% flag percept
+		% If it percepts a flag it doesn't have in its belief base, add it and send it to the manager
+		forall bel( percept( flag(Team, HolderUnrealID, Position) ), not(flag(Team, HolderUnrealID, Position)) )
+			do insert( flag(Team, HolderUnrealID, Position) ) 
+			+ sendonce(manager, flag(Team, HolderUnrealID, Position)).
+
+		% If it doesn't percept a flag it has in its belief base, remove it
+		forall bel( percept( not(flag(Team, HolderUnrealID, Position)) ), flag(Team, HolderUnrealID, Position) )
+			do delete( flag(Team, HolderUnrealID, Position) ).
+		
+		% bot percept: send on negation with change
+		forall bel( percept( bot(UnrealID, Name, Team, Position, Weapon, FireMode) ),
+			not( bot(UnrealID, _, _, _, _, _) ) )
+			do insert( bot(UnrealID, Name, Team, Position, Weapon, FireMode) ).
+
+		forall bel( percept( bot(UnrealID, Name, Team, Position, Weapon, FireMode) ),
+			bot(UnrealID, OldName, OldTeam, OldPosition, OldWeapon, OldFireMode) )
+			do delete( bot(UnrealID, OldName, OldTeam, OldPosition, OldWeapon, OldFireMode) )
+			+ insert( bot(UnrealID, Name, Team, Position, Weapon, FireMode) ).
+
+		forall bel( percept(not(bot(UnrealID, Name, Team, Position, Weapon, FireMode))) )
+			do delete(bot(UnrealID, Name, Team, Position, Weapon, FireMode)).
+
+		% see navpoint percept, commented out because this is somehow triggered by the
+		% send-once navpoint percepts.
+		%forall bel( percept( navPoint(UnrealID, Position, NeighsUnrealID) ),
+		%	not(seeNavPoint(UnrealID, Position, NeighsUnrealID)) )
+		%	do insert(seeNavPoint(UnrealID, Position, NeighsUnrealID)).
+
+		%forall bel( percept( not(navPoint(UnrealID, Position, NeighsUnrealID)) ),
+		%	seeNavPoint(UnrealID, Position, NeighsUnrealID) )
+		%	do delete(seeNavPoint(UnrealID, Position, NeighsUnrealID)).
+
+		% We use these to keep track of weapons picked up and the level of armour.	
+		forall bel( percept( weapon(Weapon,_,_) ) )
+			do {
+				if bel( pickedupWeapons(PUW), not(member(Weapon, PUW)) )
+					then insert( not(pickedupWeapons(PUW)), pickedupWeapons([Weapon|PUW]) ).
+			}
+
+		% Next rule keeps track of the maximum level of armour achieved.
+		forall bel( percept( status(_,Armour,_,_) ), maxLevelOfArmour(LastMaxArmour), Armour > LastMaxArmour )
+			do delete( maxLevelOfArmour(LastMaxArmour) )
+			+ insert( maxLevelOfArmour(Armour) ).
+
+		% received role, replace old role
+		forall bel( received(manager, role(Role)), role(OldRole) )
+			do delete( role(OldRole), received(manager, role(Role)) )
+			+  insert( role(Role) ).
+
+		% received role
+		forall bel( received(manager, role(Role)) )
+			do delete( received(manager, role(Role)) )
+			+  insert( role(Role) ).
+
+	}
+}

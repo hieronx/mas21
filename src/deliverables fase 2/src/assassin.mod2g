@@ -1,0 +1,28 @@
+module assassin[exit=nogoals] {
+  program {
+	  		if bel( not(role(assassin)) ) 
+				then exit-module. 
+	  		%If a bot is visible and agent is navigating to the enemy base, stop navigating and follow bot
+	  		if bel(otherTeam(Team),base(Team, BasePos), navigation(navigating,BasePos),bot(_,_,Team,BotLoc,_,_))
+			then navigate(BotLoc) + drop(navigation(navigating,BasePos)).
+	  
+	  		% If at the enemy base and bot is navigating out of a 300 distance radius, navigate to the enemy base
+			if bel( otherTeam(Team), distance(BasePos, Distance), base(Team, BasePos), Distance > 300 )
+			then navigate(BasePos).
+			
+			%in order to keep navigating, when agent has reached the enemy base, navigate towards own base
+			if bel (otherTeam(Team), base(Team, BasePos), navigation(reached,BasePos),ownTeam(Own),base(Own, OwnBase))
+			then navigate(OwnBase).
+			
+			% if too close at own base, navigate to enemy base
+			if bel( ownTeam(Team), distance(BasePos, Distance), base(Team, BasePos), Distance < 600,
+					otherTeam(En), base(En, EBPos))
+					then navigate(EBPos).
+					
+			% If we see a flag and were navigating to the enemybase, grab the flag
+			if bel(otherTeam(Team),base(Team, BasePos), navigation(navigating,BasePos), flag(_, none, Position), flagState(_, home) )
+			then navigate(Position) + drop(navigation(navigating,BasePos)).
+  
+	
+  }				
+}

@@ -1,0 +1,27 @@
+% Als een agent de rol Defender heeft zal hij als doel hebben om een door de Manager aangewezen teamlid,
+% vaak degene met de vlag van de tegenstanders, te beschermen.
+% Hij zal alle items verzamelen die binnen een redelijke afstand liggen van zijn route en zal de vlag niet oppakken van de basis.
+% In het geval dat het teamlid dat hij moet beschermen toch gedood wordt zal hij eerst zorgen dat enige tegenstanders binnen zicht
+% gedood worden en daarna de vlag oppakken als deze op de grond is gelegd door het teamlid.
+
+% a-goal( defend( UnrealID ) ): UnrealID is het ID van de bot die verdedigd moet worden.
+% 
+
+module defender[exit=noaction] {	
+  program {
+	% If role changes then 
+	if not( bel( role(defender)) ), a-goal( defend(UnrealID) )
+		then drop( defend(UnrealID) ) + exit-module.
+
+	% also exit without a target
+	if not( bel( role(defender)) )
+		then exit-module.
+	
+	% Go to the bot to defend if further away than 100
+	% todo: use the path of the bot
+	if bel( a-goal(defend(UnrealID)), distance(UnrealID, Distance), Distance > 100, bot(UnrealID, _, _, BotLoc, _, _)), not( bel( navigation(navigating, BotLoc) ))
+		then navigate(BotLoc).
+	
+  	if true then skip.
+  }
+}

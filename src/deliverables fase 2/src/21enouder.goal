@@ -1,0 +1,141 @@
+#import "init.mod2g".
+#import "flag_capturer.mod2g".
+#import "flag_defender.mod2g".
+#import "attacker.mod2g".
+#import "defender.mod2g".
+#import "assassin.mod2g".
+#import "combo.mod2g".
+
+main module {
+	knowledge {
+		% Andrenaline is useful when we don't have 100 yet
+		usefulItem(andrenaline, andrenaline) :- status(_, _, Adrenaline, _), Adrenaline < 100.
+
+		% Pick up health, the different pills have different limits
+		usefulItem(health, mini_health)      :- status(Health, _, _, _), Health < 199.
+
+		% Don't use the super health pack for just 20 health
+		usefulItem(health, super_health)     :- status(Health, _, _, _), Health < 180.
+		usefulItem(health, health)           :- status(Health, _, _, _), Health < 100.
+		usefulItem(armor, small_armor)       :- status(_, Armour, _, _), Armour < 50.
+		usefulItem(armor, super_armor)       :- status(_, Armour, _, _), Armour < 150.
+
+		% Pick up weapons we don't have yet
+		usefulItem(weapon, ItemType)         :- not(weapon(ItemType,_,_)).
+
+		% Pick up all the ammo when we're not full yet
+		usefulItem(ammo, assault_rifle)      :- weapon(assault_rifle, Ammo, AltAmmo), (Ammo < 200; AltAmmo < 8).
+		usefulItem(ammo, bio_rifle)          :- weapon(bio_rifle, Ammo, _),      Ammo < 100.
+		usefulItem(ammo, shock_rifle)        :- weapon(shock_rifle, Ammo, _),    Ammo < 50.
+		usefulItem(ammo, minigun)            :- weapon(minigun, Ammo, _),        Ammo < 300.
+		usefulItem(ammo, link_gun)           :- weapon(link_gun, Ammo, _),       Ammo < 220.
+		usefulItem(ammo, flak_cannon)        :- weapon(flak_cannon, Ammo, _),    Ammo < 35.
+		usefulItem(ammo, rocket_launcher)    :- weapon(rocket_launcher, Ammo, _),Ammo < 30.
+		usefulItem(ammo, lightning_gun)      :- weapon(lightning_gun, Ammo, _),  Ammo < 40.
+		usefulItem(ammo, sniper_rifle)       :- weapon(sniper_rifle, Ammo, _),   Ammo < 35.
+
+		% There are two teams, red and blue (this is needed for otherTeam).
+		team(red).
+		team(blue).
+
+		% True if the Team is our own team
+		ownTeam(Team) :- self(_, _, Team).
+
+		% True if the Team is the enemy
+		otherTeam(Team) :- team(Team), not(ownTeam(Team)).
+
+		holdingFlag :- flag(_, HolderUnrealID, _), self(HolderUnrealID, _, _).
+
+		% Calculate distance from point A to point B
+		manhattanDistance(A, B, Distance) :-
+			location(X1, Y1, _) = A,
+			location(X2, Y2, _) = B,
+			Dx is abs(X1 - X2), Dy = abs(Y1 - Y2),
+			Distance is Dx + Dy.
+
+		% Calculate the distance from this agent to object UnrealID
+		distance(UnrealID, Distance) :-
+			navPoint(UnrealID, PointLoc, _),
+			orientation(OwnLoc, _, _),
+			manhattanDistance(PointLoc, OwnLoc, Distance).
+
+		% Calculate the distance from this agent to item UnrealID
+		distance(UnrealID, Distance) :-
+			item(UnrealID, _, _, NavPointID),
+			distance(NavPointID, Distance).
+
+		% Calculate the distance from this agent to bot UnrealID
+		distance(UnrealID, Distance) :-
+			bot(UnrealID, _, _, BotLoc, _, _),
+			orientation(OwnLoc, _, _),
+			manhattanDistance(BotLoc, OwnLoc, Distance).
+
+		% Are we stuck?
+		isStuck :- stuckCounter(Count), Count > 5.
+	}
+	program {
+		% Send the flag position to the manager when I see it
+		% if bel( flag(Team, HolderUnrealID, Position)) then sendonce('manager', flag(Team, HolderUnrealID, Position)).
+		% if bel( not(flag(Team, HolderUnrealID, Position))) then sendonce('manager', not(flag(Team, HolderUnrealID, Position))).
+
+		% If we get assigned a certain role, jump to the associated module and run it
+		if bel( role(flag_capturer) ) then flag_capturer.
+		if bel( role(flag_defender) ) then flag_defender.
+		if bel( role(attacker) ) then attacker.
+		if bel( role(defender) ) then defender.
+		if bel( role(assassin) ) then assassin.
+
+		% Respawn the agent if it believes it's stuck on the map.
+		% 5 is randomly chosen, might need improvement
+		if bel( isStuck )
+			then respawn.
+
+		% If we see the enemy flag, grab it, ignoring all items
+		if bel( flag(Team, none, Position), otherTeam(Team))
+			then {
+				% If we're not going to the flag, go to it
+				if bel( not(navigation(navigating, Position)) )
+					then navigate(Position).
+
+				% Otherwise, skip everything else (don't try to go to any items)
+				if true
+					then skip.
+			}
+
+		% If we see a flag(own or enemy) on the ground, grab/return it
+		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
+			then navigate(Position).
+
+		% If there's a goal to get an item, check if it's still valid and then go to it
+		if goal( getItem(ID, Label, ItemType, Position) ) then {
+			% Don't go to the item if we don't need it anymore
+			if bel( not(usefulItem(Label, ItemType)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Don't go to the item if there's no item anymore
+			if bel( not(item(ID, Label, ItemType, Position)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Otherwise, go to the item
+			if not(bel( navigation(navigating, Position) ))
+				then navigate(Position).
+		}
+
+		% If there's no goal to get an item, and there's a useful item in sight, adopt a goal to go to it
+		if not(goal(getItem(_, _, _, _))), bel(item(UnrealID, Label, ItemType, Position), usefulItem(Label, ItemType))
+			then adopt( getItem(UnrealID, Label, ItemType, Position) ).
+
+		% This makes sure that if the agent is not navigating, it tries to go to the other base in the hope of picking up a flag
+		if bel( not(navigation(navigating, _)), not(holdingFlag), otherTeam(Team), base(Team, BasePos) )
+			then navigate(BasePos).
+
+		% If we're carrying the flag, go to our own base
+		if bel( not(navigation(navigating, _)), holdingFlag, ownTeam(Team), base(Team, BasePos) )
+			then navigate(BasePos).
+
+		% if there's no useful item anywhere, go to a pickup location
+		if bel( not(navigation(navigating, _)), pickup(UnrealID, _,_) )
+			then navigate(UnrealID).
+	}
+}
+#import "event.mod2g".

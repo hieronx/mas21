@@ -1,0 +1,179 @@
+init module {
+	% contains the initial beliefs.
+	beliefs{
+		% the following beliefs correspond to send on change percepts, and our event rules require that there is a belief to delete.
+		% Initially, we are going nowhere.
+		navigation(none, none).
+		
+		% Initially we have 100% health, 0 armour, 0 adrenaline and no combos
+		status(100, 0, 0, none).
+		
+		% Initially, our score is 0 kills, 0 deaths and 0 suicides
+		score(0, 0, 0).
+
+		% when a navigation(suck, _) is received, we are not neccesarily stuck, so to avoid needlessly respawning
+		% we wait until we receive the percept 5 times in a row
+		stuckCounter(0).
+		
+		% We use this to keep track of the list of weapons that the bot picked up in total (even after respawn)
+		pickedupWeapons([]).
+		% We use this to keep track of the value of armour that the bot attained
+		maxLevelOfArmour(0).
+
+		% initial current weapon is the assault_rifle
+		currentWeapon(assault_rifle, none).
+
+		% initial score is 0-0
+		teamScore(0, 0).
+
+		% the flag for both teams is initially home
+		flagState(red, home).
+		flagState(blue, home).
+
+		% initial shooting state
+		shooting(nearestEnemy).
+
+	}
+	goals{
+		winTheGame. % possibly attained, slightly philosophical
+	}
+	program{
+		% The base percept provides the location of all team bases. It is a "send once" percept.
+		% The base position is the position where the flag is located, which we store in the belief base.
+		forall bel( percept( base(Team, UnrealID) ) )
+			do insert( base(Team, UnrealID) ).
+		
+		% The self percept (send once) provides you with your nickname and team (red, blue or none), which we store in the belief base.
+		forall bel( percept( self(UnrealID, NickName, Team) ))
+			do insert( self(UnrealID, NickName, Team))
+			+ sendonce( manager, self(UnrealID, NickName, Team) ).
+		
+		% The initial orientation percept (send on change) provides you with details about the location of the bot (X, Y and Z coordinates),
+		% where it's looking (the rotation) and it's movement speed (velocity).
+		forall bel( percept( orientation(Location, Rotation, Velocity) ))
+			do insert( orientation(Location, Rotation, Velocity)).
+		
+		% The navPoint percept (send once) provides you with information about points on the map:
+		% its coordinates and nearby navPoints.
+		forall bel( percept(navPoint(UnrealID, Position, NeigsUnrealID)))
+			do insert(navPoint(UnrealID, Position, NeigsUnrealID)).
+		
+		% The pickup percept (send once) provides you with the locations at which weapons can be picked up,
+		% including its label (e.g. shield_gun) and actual weapon type.
+		forall bel( percept( pickup(UnrealID, Label, ItemType) ) )
+			do insert(pickup(UnrealID, Label, ItemType)).
+		
+		% The game percept (send once) provides you with information about the game itself,
+		% such as the type (e.g. BotCTFGame), the current map, the GoalScore (the game ends when either team reaches this)
+		% and the time limit.
+		forall bel( percept( game(GameType, Map, GoalScore, TimeLimit) ) )
+			do insert(game(GameType, Map, GoalScore, TimeLimit))
+			+ sendonce(manager, game(GameType, Map, GoalScore, TimeLimit)).
+		
+	}
+	actionspec{
+		% Durative
+			% Navigate to Destination
+			% Navigate is a durative action and there aren't any pre-conditions
+			navigate(Destination) {
+				% Navigation is always possible, it is durative
+				pre {
+					% store the old nav state/dest to delete it in post
+					navigation(OldNavState, OldNavDest)
+				}
+
+				% All effects are received via the navigation percept, but not fast enough
+				% this is a durative action, nothing changed yet, but set navigation(navigating, Destination)
+				% to avoid navigating multiple times in a row
+				post {
+					not(navigation(OldNavState, OldNavDest)),
+					navigation(navigating, Destination)
+				}
+			}
+
+			% Stand still (but keep looking and shooting)
+			% Stop is a durative action and there aren't any pre-conditions
+			stop {
+				pre {
+					% store the old nav state/dest to delete it in post
+					navigation(OldNavState, OldNavDest)
+				}
+				% the effect is received via percept(navigation(waiting, none)), but not fast enough
+				% to avoid stopping multiple times in a row
+				post {
+					not(navigation(OldNavState, OldNavDest)),
+					navigation(waiting, none)
+				}
+			}
+
+			% shoot action, set priority of each opponent
+			shoot(TargetLabel) {
+				% remove the old shooting belief
+				pre {
+					shooting(OldTargetLabel)
+				}
+				% insert a new shooting belief
+				post {
+					not(shooting(OldTargetLabel)),
+					shooting(TargetLabel)
+				}
+			}
+			
+			% stopShooting, identical to shoot([])
+			stopShooting {
+				pre {
+					shooting(OldTargetLabel)
+				}
+				post {
+					not(shooting(OldTargetLabel)),
+					shooting(none)
+				}
+			}
+			
+			% todo: prefer (weapon)
+			
+			% todo: look
+
+		% Instantaneous
+			% Respawn is an instantaneous action with no pre-conditions,
+			% but it does change the navigation belief to waiting, to avoid respawning multiple times
+			% in case the bot was stuck
+			respawn {
+				pre {
+					% store the old navigation state in variables
+					navigation(OldNavState, OldNavDest)
+				}
+				post {
+					% delete the old navigation state
+					not(navigation(OldNavState, OldNavDest)),
+
+					% insert a waiting state
+					navigation(waiting, none)
+				}
+			}
+
+			% Combo executes a combo. Possible combo's are:
+			% speed - run faster
+			% booster - gain health at rate 5 per second up to 199, then gain armor shield at rate 5 per second up to 150
+			% invisible - Bot becomes nearly invisible (does not work well when holding flag)
+			% beserk - double fire rate
+			combo (Combo) {
+				pre {
+					% check if there is enough adrenaline for a combo.
+					status(_, _, 100, _)
+				}
+				post { true }
+			}
+			
+			
+			% todo: dropWeapon
+			
+			% todo: path
+
+			% Do nothing
+			skip {
+				pre{ true }
+				post{ true }
+			}
+	}
+}

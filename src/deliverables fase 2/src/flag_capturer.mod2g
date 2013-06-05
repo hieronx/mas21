@@ -1,0 +1,69 @@
+module flag_capturer[exit=always] {
+  program {
+	  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+	  	if bel( flag(_, none, _) )
+			then seeFlag.
+
+		
+			
+	% Modules for the three possible flagstates.
+		if bel( otherTeam(Team), flagState(Team, home) )
+			then home.
+
+		if bel( otherTeam(Team), flagState(Team, held) )
+			then held.
+
+		if bel( otherTeam(Team), flagState(Team, dropped) )
+			then dropped.
+
+		if true then skip.
+  }
+}
+
+% If a flag is seen, move immediately to that flag
+module seeFlag[exit=always] {
+  program {
+		% If we see a flag(own or enemy) on the ground, grab/return it
+		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
+			then navigate(Position).
+
+		% if we see the enemy flag, grab it, ignoring all items
+		if bel( flag(Team, none, Position), otherTeam(Team))
+			then {
+				% if we're not going to the flag, go to it
+				if bel( not(navigation(navigating, Position)) )
+					then navigate(Position).
+
+				% otherwise, skip everything else (don't try to go to any items)
+				if true
+					then skip.
+			}
+  }
+}
+
+module home[exit=always] {
+  program {
+		% This makes sure that if the agent is not navigating, it tries to go to the other base in the hope of picking up a flag
+		if bel( not(navigation(navigating, _)), not(holdingFlag), otherTeam(Team), base(Team, BasePos) )
+			then navigate(BasePos).
+  }
+}
+
+module held[exit=always] {
+  program {
+		% If we're carrying the flag, go to our own base
+		if bel( not(navigation(navigating, _)), holdingFlag, ownTeam(Team), base(Team, BasePos) )
+			then navigate(BasePos).
+			
+		% If another bot is holding the flag defend that bot, that bot will get a new role from the manager.
+  }
+}
+
+module dropped[exit=always] {
+  program {
+	  % TODO: go to last known flag location.
+	  
+	  % If the flag is not at the last known location pretend the enemy flag is at the base to get the flag after it resets.
+	  if true then home.
+  }
+}
