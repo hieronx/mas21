@@ -16,58 +16,6 @@ main module {
 		if bel( role(attacker) ) then attacker.
 		if bel( role(defender) ) then defender.
 		if bel( role(assassin) ) then assassin.
-
-		% Respawn the agent if it believes it's stuck on the map.
-		% 5 is randomly chosen, might need improvement
-		if bel( isStuck )
-			then respawn.
-
-		% If we see the enemy flag, grab it, ignoring all items
-		if bel( flag(Team, none, Position), otherTeam(Team))
-			then {
-				% If we're not going to the flag, go to it
-				if bel( not(navigation(navigating, Position)) )
-					then navigate(Position).
-
-				% Otherwise, skip everything else (don't try to go to any items)
-				if true
-					then skip.
-			}
-
-		% If we see a flag(own or enemy) on the ground, grab/return it
-		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
-			then navigate(Position).
-
-		% If there's a goal to get an item, check if it's still valid and then go to it
-		if goal( getItem(ID, Label, ItemType, Position) ) then {
-			% Don't go to the item if we don't need it anymore
-			if bel( not(usefulItem(Label, ItemType)) )
-				then drop(getItem(ID, Label, ItemType, Position)).
-
-			% Don't go to the item if there's no item anymore
-			if bel( not(item(ID, Label, ItemType, Position)) )
-				then drop(getItem(ID, Label, ItemType, Position)).
-
-			% Otherwise, go to the item
-			if not(bel( navigation(navigating, Position) ))
-				then navigate(Position).
-		}
-
-		% If there's no goal to get an item, and there's a useful item in sight, adopt a goal to go to it
-		if not(goal(getItem(_, _, _, _))), bel(item(UnrealID, Label, ItemType, Position), usefulItem(Label, ItemType))
-			then adopt( getItem(UnrealID, Label, ItemType, Position) ).
-
-		% This makes sure that if the agent is not navigating, it tries to go to the other base in the hope of picking up a flag
-		if bel( not(navigation(navigating, _)), not(holdingFlag), otherTeam(Team), base(Team, BasePos) )
-			then navigate(BasePos).
-
-		% If we're carrying the flag, go to our own base
-		if bel( not(navigation(navigating, _)), holdingFlag, ownTeam(Team), base(Team, BasePos) )
-			then navigate(BasePos).
-
-		% if there's no useful item anywhere, go to a pickup location
-		if bel( not(navigation(navigating, _)), pickup(UnrealID, _,_) )
-			then navigate(UnrealID).
 	}
 }
 #import "event.mod2g".

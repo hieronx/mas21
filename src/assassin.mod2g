@@ -1,33 +1,60 @@
-module assassin[exit=nogoals] {
-  program {
-	  	if bel( not(role(assassin)) ) 
-				then exit-module. 
+module assassin[exit=nogoals,focus=new] {
+	goals {
+		winTheGame.
+	}
+	program {
 			
+
+		if bel( not(role(assassin)) )
+			then exit-module.
+
+		% Respawn the agent if it believes it's stuck on the map.
+		% 5 is randomly chosen, might need improvement
+		if bel( isStuck )
+			then respawn.
+
 		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
 		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
 			then combo(Combo).
 
-	  	% If a bot is visible and agent is navigating to the enemy base, stop navigating and follow bot
-	  	if bel(otherTeam(Team),base(Team, BasePos), navigation(navigating,BasePos),bot(_,_,Team,BotLoc,_,_))
-				then navigate(BotLoc) + drop(navigation(navigating,BasePos)).
-	  
-	  	% If at the enemy base and bot is navigating out of a 300 distance radius, navigate to the enemy base
-			if bel( otherTeam(Team), distance(BasePos, Distance), base(Team, BasePos), Distance > 300 )
-				then navigate(BasePos).
-			
-			% In order to keep navigating, when agent has reached the enemy base, navigate towards own base
-			if bel (otherTeam(Team), base(Team, BasePos), navigation(reached,BasePos),ownTeam(Own),base(Own, OwnBase))
-				then navigate(OwnBase).
-			
-			% If too close at own base, navigate to enemy base
-			if bel( ownTeam(Team), distance(BasePos, Distance), base(Team, BasePos), Distance < 600,
-					otherTeam(En), base(En, EBPos))
-					then navigate(EBPos).
-					
-			% If we see a flag and were navigating to the enemybase, grab the flag
-			if bel(otherTeam(Team),base(Team, BasePos), navigation(navigating,BasePos), flag(_, none, Position), flagState(_, home) )
-			then navigate(Position) + drop(navigation(navigating,BasePos)).
-  
+		% If we see the enemy flag, grab it, ignoring all items
+		if bel( flag(Team, none, Position), otherTeam(Team))
+			then {
+				% If we're not going to the flag, go to it
+				if bel( not(navigation(navigating, Position)) )
+					then navigate(Position).
+
+				% Otherwise, skip everything else (don't try to go to any items)
+				if true
+					then skip.
+			}
+
+		% If we see a flag(own or enemy) on the ground, grab/return it
+		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
+			then navigate(Position).
+
+		% If there's a goal to get an item, check if it's still valid and then go to it
+		if goal( getItem(ID, Label, ItemType, Position) ) then {
+			% Don't go to the item if we don't need it anymore
+			if bel( not(usefulItem(Label, ItemType)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Don't go to the item if there's no item anymore
+			if bel( not(item(ID, Label, ItemType, Position)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Otherwise, go to the item
+			if not(bel( navigation(navigating, Position) ))
+				then navigate(Position).
+		}
+
+		% If there's no goal to get an item, and there's a useful item in sight, adopt a goal to go to it
+		if not(goal(getItem(_, _, _, _))), bel(item(UnrealID, Label, ItemType, Position), usefulItem(Label, ItemType))
+			then adopt( getItem(UnrealID, Label, ItemType, Position) ).
+
+		% if there's no useful item anywhere, go to a pickup location
+		if bel( not(navigation(navigating, _)), pickup(UnrealID, _,_) )
+			then navigate(UnrealID).
 	
-  }				
+	}				
 }
