@@ -4,7 +4,6 @@
 #import "attacker.mod2g".
 #import "defender.mod2g".
 #import "assassin.mod2g".
-#import "combo.mod2g".
 
 main module {
 	knowledge {
