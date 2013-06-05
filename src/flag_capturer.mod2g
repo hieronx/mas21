@@ -1,22 +1,18 @@
 module flag_capturer[exit=always] {
   program {
-	  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-	  	if bel( flag(_, none, _) )
-			then seeFlag.
+  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+  	if bel( flag(_, none, _) )
+		  then seeFlag.
 
-		
-			
-	% Modules for the three possible flagstates.
-		if bel( otherTeam(Team), flagState(Team, home) )
-			then home.
+  	% Modules for the three possible flagstates.
+  		if bel( otherTeam(Team), flagState(Team, home) )
+  			then home.
 
-		if bel( otherTeam(Team), flagState(Team, held) )
-			then held.
+  		if bel( otherTeam(Team), flagState(Team, held) )
+  			then held.
 
-		if bel( otherTeam(Team), flagState(Team, dropped) )
-			then dropped.
-
-		if true then skip.
+  		if bel( otherTeam(Team), flagState(Team, dropped) )
+  			then dropped.
   }
 }
 

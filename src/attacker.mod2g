@@ -1,18 +1,17 @@
 module attacker[exit=nogoals] {
   program {
-
 		% If role changes then exit module
 		if bel( not(bel(role(attacker))) ), a-goal( kill(UnrealID, Name, Team, Modules) )
 			then drop( kill(UnrealID, Name, Team, Modules) ) + exit-module.
 
-  		% If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
-	  	% then the previous target  a goal is set to kill this person
-	  	if bel(received(killTarget(UnrealID, Name, Team, Position ))), a-goal(kill(UnrealID, Name, Team, Modules))
+		% If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
+  	% then the previous target  a goal is set to kill this person
+  	if bel(received(killTarget(UnrealID, Name, Team, Position ))), a-goal(kill(UnrealID, Name, Team, Modules))
 			then drop(kill(UnrealID, Name, Team, Modules)) + delete(received(killTarget(UnrealID, Name, Team, Position))) 
 			+ adopt(kill(UnrealID, Name, Team, Modules)).
 
-  		% If a killtarget is received from the manager and there was no previous killtarget
-  		% then adopt the goal of killing the person and delete the received from beliefs
+		% If a killtarget is received from the manager and there was no previous killtarget
+		% then adopt the goal of killing the person and delete the received from beliefs
 		if bel(received(killTarget(UnrealID, Name, Team, Position )))
 			then adopt(kill(UnrealID, Name, Team, Position)) + delete(received(killTarget(UnrealID, Name, Team, Position))).
 
@@ -29,6 +28,5 @@ module attacker[exit=nogoals] {
 		% because that is the most likely place for him to be.
 		if bel( not(navigation(navigating, _)), otherTeam(Team), base(Team, BasePos) )
 			then navigate(BasePos).
-
   }
 }

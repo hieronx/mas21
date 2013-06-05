@@ -11,10 +11,6 @@ main module {
 		#import "knowledge.pl".
 	}
 	program {
-		% Send the flag position to the manager when I see it
-		% if bel( flag(Team, HolderUnrealID, Position)) then sendonce('manager', flag(Team, HolderUnrealID, Position)).
-		% if bel( not(flag(Team, HolderUnrealID, Position))) then sendonce('manager', not(flag(Team, HolderUnrealID, Position))).
-
 		% If we get assigned a certain role, jump to the associated module and run it
 		if bel( role(flag_capturer) ) then flag_capturer.
 		if bel( role(flag_defender) ) then flag_defender.

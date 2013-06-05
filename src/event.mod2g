@@ -100,16 +100,6 @@ event module {
 		forall bel( percept(not(bot(UnrealID, Name, Team, Position, Weapon, FireMode))) )
 			do delete(bot(UnrealID, Name, Team, Position, Weapon, FireMode)).
 
-		% see navpoint percept, commented out because this is somehow triggered by the
-		% send-once navpoint percepts.
-		%forall bel( percept( navPoint(UnrealID, Position, NeighsUnrealID) ),
-		%	not(seeNavPoint(UnrealID, Position, NeighsUnrealID)) )
-		%	do insert(seeNavPoint(UnrealID, Position, NeighsUnrealID)).
-
-		%forall bel( percept( not(navPoint(UnrealID, Position, NeighsUnrealID)) ),
-		%	seeNavPoint(UnrealID, Position, NeighsUnrealID) )
-		%	do delete(seeNavPoint(UnrealID, Position, NeighsUnrealID)).
-
 		% received role, replace old role
 		forall bel( received(manager, role(Role)), role(OldRole) )
 			do delete( role(OldRole), received(manager, role(Role)) )
