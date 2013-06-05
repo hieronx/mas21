@@ -3,16 +3,20 @@ module flag_capturer[exit=always] {
   	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
   	if bel( flag(_, none, _) )
 		  then seeFlag.
+			
+	% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+	if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+		then combo(Combo).
 
   	% Modules for the three possible flagstates.
-  		if bel( otherTeam(Team), flagState(Team, home) )
-  			then home.
+	if bel( otherTeam(Team), flagState(Team, home) )
+		then home.
 
-  		if bel( otherTeam(Team), flagState(Team, held) )
-  			then held.
+	if bel( otherTeam(Team), flagState(Team, held) )
+		then held.
 
-  		if bel( otherTeam(Team), flagState(Team, dropped) )
-  			then dropped.
+	if bel( otherTeam(Team), flagState(Team, dropped) )
+		then dropped.
   }
 }
 

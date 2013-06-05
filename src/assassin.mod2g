@@ -2,6 +2,10 @@ module assassin[exit=nogoals] {
   program {
 	  	if bel( not(role(assassin)) ) 
 				then exit-module. 
+			
+		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+			then combo(Combo).
 
 	  	% If a bot is visible and agent is navigating to the enemy base, stop navigating and follow bot
 	  	if bel(otherTeam(Team),base(Team, BasePos), navigation(navigating,BasePos),bot(_,_,Team,BotLoc,_,_))

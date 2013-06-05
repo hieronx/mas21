@@ -3,6 +3,10 @@ module flag_defender[exit=nogoals] {
 		if bel( not(role(flag_defender)) ) 
 				then exit-module. 
 				
+		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+			then combo(Combo).
+			
 		if bel(ownTeam(Team), flagState(Team, home), distance(BasePos, Distance), base(Team, BasePos), Distance > 200 )
 				then navigate(BasePos).		
 		

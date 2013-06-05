@@ -3,6 +3,10 @@ module defender[exit=noaction] {
 		% If role changes then 
 		if not( bel( role(defender)) ), a-goal( defend(UnrealID) )
 			then drop( defend(UnrealID) ) + exit-module.
+			
+		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+			then combo(Combo).
 
 		% also exit without a target
 		if not( bel( role(defender)) )
