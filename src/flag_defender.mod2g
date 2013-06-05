@@ -1,42 +1,32 @@
-%Het doel van de flagdefender is om de eigen vlag te bewaken door telkens op de thuisbasis te patrouilleren.
-%Als de vlag gepakt wordt zal degene die de vlag gepakt heeft achtervolgd worden.
-
-
 module flag_defender[exit=nogoals] {
   program {
- 
-	if bel( not(role(flag_defender)) ) 
-			then exit-module. 
-			
-	% If not navigating, go to homebase.
-	%if bel( not(navigation(navigating, _)), ownTeam(Team), base(Team, BasePos) )
-			%then navigate(BasePos).
-			
-	if bel(ownTeam(Team), flagState(Team, home), distance(BasePos, Distance), base(Team, BasePos), Distance > 200 )
-			then navigate(BasePos).		
-	
-	% if there's a goal to get an item and the distance from the base towards the item is < 500 , check if it's still valid and then go to it
-	if goal( getItem(ID, Label, ItemType, Position) ), bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance < 500 )
-			then {
-				% don't go to the item if we don't need it anymore
-				if bel( not(usefulItem(Label, ItemType)) )
-					then drop(getItem(ID, Label, ItemType, Position)).
-
-				% don't go to the item if there's no item anymore
-				if bel( not(item(ID, Label, ItemType, Position)) )
-					then drop(getItem(ID, Label, ItemType, Position)).
-
-				% don't go to the item if the distance from the base towards the item is > 500
-				if bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance > 500  )
-					then drop(getItem(ID, Label,ItemType, Position)).
+		if bel( not(role(flag_defender)) ) 
+				then exit-module. 
 				
-				% otherwise, go to the item
-				if not(bel( navigation(navigating, Position) ))
-					then navigate(Position).
-	}	
-	
-	if bel(isStuck)
-		then respawn.
-  
+		if bel(ownTeam(Team), flagState(Team, home), distance(BasePos, Distance), base(Team, BasePos), Distance > 200 )
+				then navigate(BasePos).		
+		
+		% if there's a goal to get an item and the distance from the base towards the item is < 500 , check if it's still valid and then go to it
+		if goal( getItem(ID, Label, ItemType, Position) ), bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance < 500 )
+				then {
+					% don't go to the item if we don't need it anymore
+					if bel( not(usefulItem(Label, ItemType)) )
+						then drop(getItem(ID, Label, ItemType, Position)).
+
+					% don't go to the item if there's no item anymore
+					if bel( not(item(ID, Label, ItemType, Position)) )
+						then drop(getItem(ID, Label, ItemType, Position)).
+
+					% don't go to the item if the distance from the base towards the item is > 500
+					if bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance > 500  )
+						then drop(getItem(ID, Label,ItemType, Position)).
+					
+					% otherwise, go to the item
+					if not(bel( navigation(navigating, Position) ))
+						then navigate(Position).
+		}	
+		
+		if bel( isStuck )
+			then respawn.
   }
 }
