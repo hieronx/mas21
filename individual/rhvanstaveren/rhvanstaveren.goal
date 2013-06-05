@@ -1,0 +1,195 @@
+%rhvanstaveren 1527118
+init module {
+	
+	knowledge{
+		% Count weapons.
+		amountOfWeapons(0, []).
+		amountOfWeapons(N, [Head| Tail]) :- amountOfWeapons(M, Tail), N is M+1.
+		amountOfWeapons(N) :- pickedupWeapons(X), amountOfWeapons(N, X).
+	}
+	
+	beliefs{
+		% Initially, we are going nowhere.
+		navigation(none, none).
+		
+		% Initially we have an unown orientation.
+		orientation(none, none, none).
+		
+		% Initial status.
+		status(100, 0, 0, 0).
+		
+		% Check how much adrenaline and armor is picked up.
+		pickedup(adrenaline, 0).
+		pickedup(armor, 0).
+		
+		% DO NOT REMOVE OR MODIFY the pickupWeapons predicate nor the maxLevelOfArmour predicate!
+		% We use this to keep track of the list of weapons that the bot picked up so far. 
+		pickedupWeapons([]).
+		% We use this to keep track of the value of armour. 
+		maxLevelOfArmour(0).
+	}
+	goals{
+		% You start with 2 weapons, so need to collect 6 weapons in total.
+		amountOfWeapons(6).
+		pickedup(adrenaline, 10).
+		pickedup(armor, 1).
+	}
+	
+	program{
+		% The base percept provides the location of all team bases. It is a "send once" percept.
+		% The base position is the position where the flag is located, which we store in the belief base.
+		forall bel( percept(base(Team, UnrealID)) ) do insert( flagPosition(UnrealID) ).
+		
+		% The self percept provides the UnrealID, NickName and team of a bot.
+		if bel( percept(self(UnrealID, NickName, Team)) ) then insert( self(UnrealID, NickName, Team) ).
+		
+		% Pickup points with unique UnrealID, a Label like weapon or ammo, ItemType: specific type of Label
+		forall bel( percept(pickup(UnrealID, Label, ItemType)) ) do insert( pickup(UnrealID, Label, ItemType) ).
+		
+		% Game info
+		% Gametype: capture the flag, Map: mapname, GoalScore, TimeLimit: in minutes
+		if bel( percept(game(Gametype, Map, GoalScore, TimeLimit)) ) then insert( game(Gametype, Map, GoalScore, TimeLimit) ).
+	}
+	
+	actionspec{
+	% 6.1: Behavior Actions
+		% Navigate to Destination
+		navigate(Destination) {
+			pre{ navigation(OldNavigation, OldDestination), not(navigation(navigating, Destination)) }
+			post{ not(navigation(OldNavigation, OldDestination)), navigation(navigating, Destination) }
+		}
+		
+		% Stand still (but keep looking and shooting)
+		stop {
+			pre{ navigation(OldNavigation, OldDestination) }
+			post{ not(navigation(OldNavigation, OldDestination)), navigation(waiting, none) }
+		}
+		
+		% todo: shoot
+		
+		% todo: stopShooting
+		
+		% todo: prefer (weapon)
+		
+		% todo: look
+		
+	% 6.2: Instant actions
+		% Respawn the bot
+		% status change is done with percepts
+		respawn {
+			pre{ navigation(OldNavigation, OldDestination) }
+			post{ not(navigation(OldNavigation, OldDestination)), navigation(waiting, none) }
+		}
+		
+		% todo: combo
+		
+		% todo: dropWeapon
+		
+		% todo: path
+		
+		% Do nothing
+		skip {
+			pre{ true }
+			post{ true }
+		}
+	}
+}
+
+main module {
+	program [order=random] {
+		% pickup new weapon if it is a goal
+		if	a-goal( amountOfWeapons(6) ),
+			bel( not(navigation(navigating,_)),
+			pickup(UnrealID, weapon, ItemType),
+			pickedupWeapons(PUW),
+			not( member(ItemType, PUW) ) )
+			then navigate(UnrealID).
+		% pickup other things than weapons
+		if	a-goal( pickedup( Item, Amount ) ),
+			bel( not(navigation(navigating,_)),
+			Amount>0,
+			pickup(UnrealID, Item, _),
+			not(Item=weapon) )
+			then navigate(UnrealID).
+			
+		% if no other goals get more weapons
+	}
+}
+
+event module {
+	program {
+	% The following updates have to be done before status is changed
+		% update pickedup(armor, X) when armor is picked up
+		forall bel( percept(status(_,Armour,_,_)), status(_, LastArmour, _, _), Armour > LastArmour, pickedup(armor, X), Y is X+1 )
+			do delete( pickedup(armor, X) ) + insert( pickedup(armor, Y) ).
+		
+		% update pickedup(adrenaline, X) when adrenaline is picked up
+		forall bel( percept(status(_,_,Adrenaline,_)), status(_, _, LastAdrenaline, _), Adrenaline > LastAdrenaline, pickedup(adrenaline, X), Y is X+1 )
+			do delete( pickedup(adrenaline, X) ) + insert( pickedup(adrenaline, Y) ).
+			
+			
+	% 7.1: Self Percepts
+		% The orientation is the starting position of the bot
+		% Location: (x, y, z), Rotation: (pitch, jaw, roll), Velocity: (vx, vy, vz)
+		if bel( orientation(OldLocation, OldRotation, OldVelocity), percept(orientation(Location, Rotation, Velocity)) )
+			then delete( orientation(OldLocation, OldRotation, OldVelocity) ) + insert( orientation(Location, Rotation, Velocity) ).
+		
+		% Update the status state of the bot that is controlled. navigation is a "send on change" percept.
+		if bel( status(OldHealth, OldArmour, OldAdrenaline, OldCombo), percept(status(Health, Armour, Adrenaline, Combo)) )
+			then delete( status(OldHealth, OldArmour, OldAdrenaline, OldCombo) ) + insert( status(Health, Armour, Adrenaline, Combo) ).
+		
+		% todo: score
+		
+		% todo: currentWeapon
+			
+	% 7.2: Action Percepts
+		% When this bot is fragged
+		forall bel( percept(fragged(_, _, VictimID, _)) ) do {
+			if bel( self(VictimID, _, _) ) then {
+				if bel( navigation(OldStatus, OldDest) )
+					then delete( navigation(OldStatus, OldDest) ) + insert( navigation(waiting, none) ).
+			}
+		}
+		
+		% Update the navigation state of the bot that is controlled. navigation is a "send on change" percept.
+		if bel( navigation(OldStatus, OldDest),  percept(navigation(Status, Destination)) )
+			then delete( navigation(OldStatus, OldDest) ) + insert( navigation(Status, Destination) ).
+
+		% Respawn the bot if it gets stuck
+		if bel( percept(navigation(stuck, _)) )
+			then respawn.
+		
+		% todo: path
+		
+		% todo: logic (iteration)
+			
+	% 7.3: Map Percepts
+		
+		% todo: (item) pickup
+		
+		% todo: teamScore
+		
+		% todo: flagState
+	
+	% 7.4: See percepts
+		
+		% todo: (see) item
+		
+		% todo: (see) flag
+		
+		% todo: (see) bot
+		
+		% todo: (see) navPoint
+
+	% Predefined goals:
+		% DO NOT REMOVE OR MODIFY any of the percept rules below!
+		% We use these to keep track of weapons picked up and the level of armour.	
+		forall bel( percept(weapon(Weapon,_,_)) ) do {
+			if bel( pickedupWeapons(PUW), not(member(Weapon, PUW)) ) 
+				then insert( not(pickedupWeapons(PUW)), pickedupWeapons([Weapon|PUW]) ).
+		}
+		% Next rule keeps track of the maximum level of armour achieved.
+		forall bel( percept(status(_,Armour,_,_)), maxLevelOfArmour(LastMaxArmour), Armour > LastMaxArmour )
+			do delete( maxLevelOfArmour(LastMaxArmour) ) + insert( maxLevelOfArmour(Armour) ).
+	}
+}

@@ -1,0 +1,110 @@
+% Door Robert Carosi (4242130)
+% Backtabbed comments zijn stukken die door mij zijn toegevoegd.
+
+init module {
+	beliefs{
+	% Lijst van dingen die belangrijker zijn dan het ophalen van de vlag.
+		importance([weapon, armor, adrenaline]).
+		
+		% Initially, we are going nowhere.
+		navigation(none, none).
+		
+		% DO NOT REMOVE OR MODIFY the pickupWeapons predicate nor the maxLevelOfArmour predicate!
+		% We use this to keep track of the list of weapons that the bot picked up so far. 
+		pickedupWeapons([]).
+		% We use this to keep track of the value of armour. 
+		maxLevelOfArmour(0).
+	}
+	goals{
+		visitFlags.
+	}
+	program{
+		% The base percept provides the location of all team bases. It is a "send once" percept.
+		% The base position is the position where the flag is located, which we store in the belief base.
+		forall bel( percept(base(Team, UnrealID)) ) do insert( flagPosition(UnrealID) ).
+	% Vertel de agent wat zijn ID, nickname en in welk team hij zit.
+		forall bel( percept(self(UnrealID, NickName, Team)) ) do insert( self(UnrealID, NickName, Team) ).
+	% Vertel de agent op welke plaats, welk object ligt om deze later bijvoorbeeld op te pakken.
+		forall bel( percept(pickup(UnrealID, Label, ItemType)) ) do insert( pickup(UnrealID, Label, ItemType) ).
+	% Vertel de agent welke UnrealID van een basis bij welk team hoort.
+		forall bel( percept(base(Team, UnrealID)) ) do insert( base(Team, UnrealID) ).
+	% Vertel de agent details over de game zoals Gametype, map, goalscore, timelimit.
+		forall bel( percept(game(Gametype, Map, GoalScore, TimeLimit)) ) do insert( game(Gametype, Map, GoalScore, TimeLimit) ).
+	% Vertel de agent details over de beginstatus van de bot. (sendonce?)
+		forall bel( percept(status(Health, Armour, Adrenaline, Combo)) ) do insert( status(Health, Armour, Adrenaline, Combo) ).
+	}
+	actionspec{
+	% Navigeer naar een Destination( UnrealID of location(x,y,z) ) en zet navigation(navigating, Destination) in de beliefbase
+		navigate(Destination) {
+			pre{ true }
+			post{ true }
+		}
+	% Vertel de bot te stoppen met navigeren, krijg vervolgens percept(navigation(waiting,none)) binnen.
+		stop {
+			pre { navigation(navigating, Destination) }
+			post { not(navigation(navigating, Destination)), navigation(waiting, none) }
+		}
+	% Respawn de bot en voegt navigation(waiting, none) toe aan de belief base.
+		respawn {
+			pre { pickedupWeapons(X), maxLevelOfArmour(Y) }
+			post { navigation(waiting, none), not(pickedupWeapons(X)), pickedupWeapons([assault_rifle,shield_gun]), not(maxLevelOfArmour(Y)), maxLevelOfArmour(0) }
+		}
+		
+	}
+}
+
+main module {
+	program {
+		
+	% Als de agent ergens naar toe loopt en hij ziet een item die hij wil hebben, deze item is of geen wapen of een wapen die nog niet in de pickedupWeapons list staat, stopt de agent,
+	% om vervolgens een van de onderstaande acties uit te voeren.
+		if bel( navigation(navigating, UnrealID), base(_, UnrealID), item(Position, Label, ItemType, _), importance(List), member(Label, List), pickedupWeapons(PUWlist), (not(Label = weapon) ; not(member(ItemType, PUWList)))) then stop.
+		
+	% Condities om health, armour, adrenaline en wapens te gaan verzamelen.
+	
+	% Als de bot een wapen ziet pakt hij deze op. Hiervoor is al gecheckt of het wapen zich niet al in de lijst van opgepakte wapens bevindt.
+		if bel(not(navigation(navigating, _)), item(UnrealID, weapon, ItemType, Position)) then navigate(UnrealID).	
+	% Als de bot niet al aan het navigaten is en een health item ziet en minder dan 100 levens heeft pakt hij deze op.
+		if bel(not(navigation(navigating, _)), item(UnrealID, health, ItemType, Position), status(Health, Armour, Adrenaline, Combo), Health < 100 ) then navigate(UnrealID).
+	% Als de bot niet al aan het navigaten is en een armor item ziet en minder dan 50 armor heeft, pakt hij deze op.
+		if bel(not(navigation(navigating, _)), item(UnrealID, armor, ItemType, Position), status(Health, Armour, Adrenaline, Combo), Armour < 50 ) then navigate(UnrealID).
+	% Als de bot niet al aan het navigaten is en een adrenaline pil ziet en minder dan 100 adrenaline heeft, pakt hij deze op. 
+		if bel(not(navigation(navigating, _)), item(UnrealID, adrenaline, ItemType, Position), status(Health, Armour, Adrenaline, Combo), Adrenaline < 100 ) then navigate(UnrealID).	
+		
+	% Respawnt de bot bij het ontvangen van de percept navigation(stuck, none)
+		if bel(navigation(stuck, none)) then respawn.
+	
+	% Ga naar de vlag toe als hij niet al aan het navigaten is.
+		if bel(not(navigation(navigating,_)), flagPosition(UnrealLocID) ) then navigate(UnrealLocID).
+	}
+}
+
+event module {
+	program {	
+		% Update the navigation state of the bot that is controlled. navigation is a "send on change" percept.
+		forall bel( navigation(OldStatus, OldDest),  percept(navigation(Status, Destination)) )
+			do delete( navigation(OldStatus, OldDest) ) + insert( navigation(Status, Destination) ).
+			
+	% Update de details over de status van de agent zoals health, armour, adrenaline en combo.
+		forall bel( status(OldHealth, OldArmour, OldAdrenaline, OldCombo), percept(status(Health, Armour, Adrenaline, Combo)) ) 
+			do delete( status(OldHealth, OldArmour, OldAdrenaline, OldCombo)) + insert( status(Health, Armour, Adrenaline, Combo) ).
+			
+	% Zet de items die de bot ziet in de belief base.
+		forall bel(percept(item(UnrealID, Label,ItemType, Position))) do insert(item(UnrealID, Label,ItemType, Position)).
+	% Haal de items weg uit de belief base die de bot niet meer ziet.
+		forall bel(percept(not(item(UnrealID, Label,ItemType, Position)))) do delete(item(UnrealID, Label,ItemType, Position)).
+		
+	% Handelt de state van de bot bij het ontvangen van een fragged percept.
+		if bel( percept(fragged(_,_,_,_)), pickedupWeapons(X), maxLevelOfArmour(X)) then delete( pickedupWeapons(X), maxLevelOfArmour(X) ) + insert( pickedupWeapons([assault_rifle,shield_gun]), maxLevelOfArmour(0)).
+		
+		% DO NOT REMOVE OR MODIFY any of the percept rules below!
+		% We use these to keep track of weapons picked up and the level of armour.	
+		forall bel( percept(weapon(Weapon,_,_)) ) do {
+			if bel( pickedupWeapons(PUW), not(member(Weapon, PUW)) ) 
+				then insert( not(pickedupWeapons(PUW)), pickedupWeapons([Weapon|PUW]) ).
+		}
+		% Next rule keeps track of the maximum level of armour achieved.
+		forall bel( percept(status(_,Armour,_,_)), maxLevelOfArmour(LastMaxArmour), Armour > LastMaxArmour )
+			do delete( maxLevelOfArmour(LastMaxArmour) ) + insert( maxLevelOfArmour(Armour) ).
+	}
+}
