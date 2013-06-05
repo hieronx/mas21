@@ -62,3 +62,30 @@ distance(UnrealID, Distance) :-
 
 % Are we stuck?
 isStuck :- stuckCounter(Count), Count > 5.
+
+% Combo knowledge:
+% choose type of combo according to role
+usefullCombo(booster) :- status(Health, _, _, _), Health < 40. % kan aangepast worden
+usefullCombo(speed) :- bel(role(flag_capturer)).
+usefullCombo(beserk) :- bel(role(flag_defender)).
+usefullCombo(beserk) :- bel(role(defender)).
+usefullCombo(beserk) :- bel(role(assassin)).
+usefullCombo(beserk) :- bel(role(attacker)).
+	
+% time the combo
+% use booster when health is low
+goodComboTiming(booster) :- true.
+
+% use speed when:
+% holding the flag
+goodComboTiming(speed) :- holding(flag).
+
+% seeing the flag
+goodComboTiming(speed) :- flag(_, none, _).
+
+% close to the enemy flag
+goodComboTiming(speed) :- otherTeam(Team), base(Team, BasePos), distance(BasePos, Distance), Distance < 400.
+	
+% use beserk when:
+% you see a enemy bot
+goodComboTiming(beserk) :- otherTeam(Team), bot(_, _, Team, _, _, _).
