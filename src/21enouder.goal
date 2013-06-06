@@ -1,4 +1,5 @@
 #import "init.mod2g".
+#import "seeFlag.mod2g".
 #import "flag_capturer.mod2g".
 #import "flag_defender.mod2g".
 #import "attacker.mod2g".

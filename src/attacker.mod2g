@@ -8,6 +8,10 @@ module attacker[exit=nogoals] {
 		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
 			then combo(Combo).
 
+  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+  	if bel( flag(_, none, _) )
+		  then seeFlag.
+
 		% If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
 		% then the previous target  a goal is set to kill this person
 		if bel(received(killTarget(UnrealID, Name, Team, Position ))), a-goal(kill(UnrealID, Name, Team, Modules))

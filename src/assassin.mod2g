@@ -3,10 +3,12 @@ module assassin[exit=nogoals,focus=new] {
 		winTheGame.
 	}
 	program {
-			
-
 		if bel( not(role(assassin)) )
 			then exit-module.
+
+  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+  	if bel( flag(_, none, _) )
+		  then seeFlag.
 
 		% Respawn the agent if it believes it's stuck on the map.
 		% 5 is randomly chosen, might need improvement
@@ -16,18 +18,6 @@ module assassin[exit=nogoals,focus=new] {
 		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
 		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
 			then combo(Combo).
-
-		% If we see the enemy flag, grab it, ignoring all items
-		if bel( flag(Team, none, Position), otherTeam(Team))
-			then {
-				% If we're not going to the flag, go to it
-				if bel( not(navigation(navigating, Position)) )
-					then navigate(Position).
-
-				% Otherwise, skip everything else (don't try to go to any items)
-				if true
-					then skip.
-			}
 
 		% If we see a flag(own or enemy) on the ground, grab/return it
 		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )

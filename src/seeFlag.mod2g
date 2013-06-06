@@ -1,0 +1,20 @@
+% If a flag is seen, move immediately to that flag
+module seeFlag[exit=always] {
+  program {
+    % If we see a flag(own or enemy) on the ground, grab/return it
+    if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
+      then navigate(Position).
+
+    % if we see the enemy flag, grab it, ignoring all items
+    if bel( flag(Team, none, Position), otherTeam(Team))
+      then {
+        % if we're not going to the flag, go to it
+        if bel( not(navigation(navigating, Position)) )
+          then navigate(Position).
+
+        % otherwise, skip everything else (don't try to go to any items)
+        if true
+          then skip.
+      }
+  }
+}

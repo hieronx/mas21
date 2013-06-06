@@ -3,15 +3,15 @@ module defender[exit=noaction] {
 		% If role changes then 
 		if not( bel( role(defender)) ), a-goal( defend(UnrealID) )
 			then drop( defend(UnrealID) ) + exit-module.
-			
-		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
-		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
-			then combo(Combo).
 
 		% also exit without a target
 		if not( bel( role(defender)) )
 			then exit-module.
 		
+    % If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+    if bel( flag(_, none, _) )
+      then seeFlag.
+    
 		% Go to the bot to defend if further away than 100
 		% todo: use the path of the bot
 		if bel( a-goal(defend(UnrealID)), distance(UnrealID, Distance), Distance > 100, bot(UnrealID, _, _, BotLoc, _, _)), not( bel( navigation(navigating, BotLoc) ))
