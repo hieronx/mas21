@@ -1,3 +1,22 @@
+% Pick up health, the different pills have different limits
+neededItem(health, mini_health)      :- status(Health, _, _, _), Health < 20.
+
+% Don't use the super health pack for just 20 health
+neededItem(health, super_health)     :- status(Health, _, _, _), Health < 150.
+neededItem(health, health)           :- status(Health, _, _, _), Health < 100.
+neededItem(armor, small_armor)       :- status(_, Armour, _, _), Armour < 50.
+neededItem(armor, super_armor)       :- status(_, Armour, _, _), Armour < 150.
+
+% Need weapons we don't have a good weapon yet
+neededItem(weapon, ItemType)         :- not(weapon(ItemType,_,_)), goodWeapon(Good), not(weapon(Good, _, _)).
+
+goodWeapon(flak_cannon)
+goodWeapon(rocket_launcher)
+
+% Need ammo when ammo lower than half
+neededItem(ammo, flak_cannon)        :- weapon(flak_cannon, Ammo, _),    Ammo < 18.
+neededItem(ammo, rocket_launcher)    :- weapon(rocket_launcher, Ammo, _),Ammo < 15.
+
 % Andrenaline is useful when we don't have 100 yet
 usefulItem(andrenaline, andrenaline) :- status(_, _, Adrenaline, _), Adrenaline < 100.
 
