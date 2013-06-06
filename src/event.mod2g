@@ -77,11 +77,15 @@ event module {
 			insert( flagState(Team, FlagState) )
 			+ send( manager, flagState(Team, FlagState) ).
 		
+
+		% only send flag position when not home
+		forall bel( percept(flag(Team, HolderUnrealID, Position)), not(flag(Team, HolderUnrealID, Position)),
+					not(flagState(Team, home)) )
+			do send(manager, flag(Team, HolderUnrealID, Position)).
 		% flag percept
 		% If it percepts a flag it doesn't have in its belief base, add it and send it to the manager
 		forall bel( percept( flag(Team, HolderUnrealID, Position) ), not(flag(Team, HolderUnrealID, Position)) )
-			do insert( flag(Team, HolderUnrealID, Position) ) 
-			+ send(manager, flag(Team, HolderUnrealID, Position)).
+			do insert( flag(Team, HolderUnrealID, Position) ).
 
 		% If it doesn't percept a flag it has in its belief base, remove it
 		forall bel( percept( not(flag(Team, HolderUnrealID, Position)) ), flag(Team, HolderUnrealID, Position) )

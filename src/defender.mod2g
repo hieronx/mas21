@@ -1,8 +1,8 @@
 module defender[exit=noaction] {	
-  program {
+  program[order=linearall] {
 		% If role changes then 
-		if not( bel( role(defender)) ), a-goal( defend(UnrealID) )
-			then drop( defend(UnrealID) ) + exit-module.
+		if not( bel( role(defender)) ), a-goal( defend(AgentID) )
+			then drop( defend(AgentID) ) + exit-module.
 
 		% also exit without a target
 		if not( bel( role(defender)) )
@@ -14,21 +14,35 @@ module defender[exit=noaction] {
 
     % If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
     % then the previous target  a goal is set to kill this person
-    if bel( received( target(UnrealID ) ) ), a-goal( defend(OldUnrealID) )
-      then drop( defend(OldUnrealID) ) 
-      + delete( received( target(UnrealID) ) ) 
-      + adopt( defend(UnrealID) ).
+    if bel( received( Sender, target(AgentID ) ) ), a-goal( defend(OldAgentID) )
+      then drop( defend(OldAgentID) ) 
+      + delete( received( Sender, target(AgentID) ) ) 
+      + adopt( defend(AgentID) ).
 
     % If a killtarget is received from the manager and there was no previous killtarget
     % then adopt the goal of killing the person and delete the received from beliefs
-    if bel( received( target(UnrealID ) ) )
-      then adopt( defend(UnrealID) ) 
-      + delete( received( target(UnrealID) ) ).
+    if bel( received( Sender, target(AgentID ) ) )
+      then adopt( defend(AgentID) ) 
+      + delete( received( Sender, target(AgentID) ) ).
 
-		% Go to the bot to defend if further away than 100
-		% todo: use the path of the bot
-		if bel( a-goal(defend(UnrealID)), distance(UnrealID, Distance), Distance > 100, bot(UnrealID, _, _, BotLoc, _, _)), not( bel( navigation(navigating, BotLoc) ))
-			then navigate(BotLoc).	
+
+    if bel( received(Sender, location(AgentID, BotLoc)), location(OldAgentID, OldBotLoc) )
+      then delete(location(OldAgentID, OldBotLoc))
+         + insert(location(AgentID, BotLoc))
+         + delete( received(Sender, location(AgentID, BotLoc))).
+
+    if bel( received(Sender, location(AgentID, BotLoc)) )
+      then insert(location(AgentID, BotLoc))
+         + delete( received(Sender, location(AgentID, BotLoc))).
+
+    % Go to the bot to defend if further away than 100
+    % todo: use the path of the bot
+    if a-goal(defend(AgentID)),
+       bel( location(AgentID, BotLoc), 
+       ((navigation(navigating, Dest), manhattanDistance(BotLoc, Dest, Distance), Distance < 20000);
+       not(navigation(navigating, _))))
+      then navigate(BotLoc).
+
   	
   	if true
       then skip.
