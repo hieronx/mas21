@@ -65,7 +65,7 @@ isStuck :- stuckCounter(Count), Count > 5.
 
 % Combo knowledge:
 % choose type of combo according to role
-usefullCombo(booster) :- status(Health, _, _, _), Health < 40. % kan aangepast worden
+usefullCombo(booster) :- status(Health, _, _, _), Health < 40.
 usefullCombo(speed) :- role(flag_capturer).
 usefullCombo(beserk) :- role(flag_defender).
 usefullCombo(beserk) :- role(defender).
@@ -73,7 +73,7 @@ usefullCombo(beserk) :- role(assassin).
 usefullCombo(beserk) :- role(attacker).
 	
 % time the combo
-% use booster when health is low
+% use booster at any time
 goodComboTiming(booster) :- true.
 
 % use speed when:
