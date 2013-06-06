@@ -1,9 +1,5 @@
 module defender[exit=noaction] {	
-  program[order=linearall] {
-		% If role changes then 
-		if not( bel( role(defender)) ), a-goal( defend(AgentID) )
-			then drop( defend(AgentID) ) + exit-module.
-
+  program {
 		% also exit without a target
 		if not( bel( role(defender)) )
 			then exit-module.
@@ -12,37 +8,16 @@ module defender[exit=noaction] {
     if bel( flag(_, none, _) )
       then seeFlag.
 
-    % If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
-    % then the previous target  a goal is set to kill this person
-    if bel( received( Sender, target(AgentID ) ) ), a-goal( defend(OldAgentID) )
-      then drop( defend(OldAgentID) ) 
-      + delete( received( Sender, target(AgentID) ) ) 
-      + adopt( defend(AgentID) ).
+    % if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+    if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+      then combo(Combo).
+    
+    if bel( isStuck )
+      then respawn.
 
-    % If a killtarget is received from the manager and there was no previous killtarget
-    % then adopt the goal of killing the person and delete the received from beliefs
-    if bel( received( Sender, target(AgentID ) ) )
-      then adopt( defend(AgentID) ) 
-      + delete( received( Sender, target(AgentID) ) ).
-
-
-    if bel( received(Sender, location(AgentID, BotLoc)), location(OldAgentID, OldBotLoc) )
-      then delete(location(OldAgentID, OldBotLoc))
-         + insert(location(AgentID, BotLoc))
-         + delete( received(Sender, location(AgentID, BotLoc))).
-
-    if bel( received(Sender, location(AgentID, BotLoc)) )
-      then insert(location(AgentID, BotLoc))
-         + delete( received(Sender, location(AgentID, BotLoc))).
-
-    % Go to the bot to defend if further away than 100
-    % todo: use the path of the bot
-    if a-goal(defend(AgentID)),
-       bel( location(AgentID, BotLoc), 
-       ((navigation(navigating, Dest), manhattanDistance(BotLoc, Dest, Distance), Distance < 20000);
-       not(navigation(navigating, _))))
-      then navigate(BotLoc).
-
+    %if the distance towards the homebase is bigger than 1500, return to homebase
+    if bel(ownTeam(Team), base(Team, BasePos), not(navigation(navigating, BasePos)))
+        then navigate(BasePos).
   	
   	if true
       then skip.

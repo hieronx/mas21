@@ -16,10 +16,9 @@ init module {
 }
 main module {
 	knowledge {
-    % Default score: 1 flag capturer, 1 flag defender, 1 defender and 1 assassin
-    roleNeeded(default, flag_capturer, 1).
+    % Default score: 2 flag capturer, 1 defender and 1 assassin
+    roleNeeded(default, flag_capturer, 2).
     roleNeeded(default, flag_defender, 1).
-    roleNeeded(default, defender, 1).
     roleNeeded(default, assassin, 1).
 
     % When our flag has been taken: 1 flag capturer and 3 attackers
@@ -117,7 +116,7 @@ main module {
         ;   Distance1 > Distance2 -> Comp = '>'
         ;   compare(Comp, A1, A2)).
 	}
-  program[order=linearall] {
+  program {
     %forall bel( scenario(Scenario), targetWasSent(Defender, FlagCarrier, OtherScenario), not(Scenario = OtherScenario) ) do
     %  delete( targetWasSent(Defender, FlagCarrier, OtherScenario) ).
 
@@ -150,20 +149,6 @@ main module {
       delete( flag(Team, OldHolder, OldPosition) )
       + insert( flag(Team, none, OldPosition) ).
 
-    if bel( role(FlagCarrier, flag_capturer), role(Defender, defender), not(defending(Defender, FlagCarrier)) ) then
-      insert( defending(Defender, FlagCarrier) )
-      + send(Defender, target(FlagCarrier) ).
-
-    if bel( defending(Defender, FlagCarrier),
-          (not(role(Defender, defender)); not(role(FlagCarrier, flag_capturer)))) then
-      delete( defending(Defender, FlagCarrier) ).
-
-    forall bel( defending(Defender, Defendee), location(Defendee, Location) ) do
-      send(Defender, location(Defendee, Location)).
-
-    %if bel( scenario(theirFlagTaken), role(FlagCarrier, flag_capturer), role(Defender, defender), scenario(Scenario), not(targetWasSent(Defender, FlagCarrier, Scenario)) ) then
-    %  send(Defender, target(FlagCarrier))
-    %  + insert( targetWasSent(Defender, FlagCarrier, Scenario) ).
   }
 }
 
