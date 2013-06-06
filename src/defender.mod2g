@@ -11,12 +11,26 @@ module defender[exit=noaction] {
     % If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
     if bel( flag(_, none, _) )
       then seeFlag.
-    
+
+    % If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
+    % then the previous target  a goal is set to kill this person
+    if bel( received( target(UnrealID, Name, Team, Position ) ) ), a-goal( defend(OldUnrealID) )
+      then drop( defend(OldUnrealID) ) 
+      + delete( received( target(UnrealID, Name, Team, Position) ) ) 
+      + adopt( defend(UnrealID) ).
+
+    % If a killtarget is received from the manager and there was no previous killtarget
+    % then adopt the goal of killing the person and delete the received from beliefs
+    if bel( received( target(UnrealID, Name, Team, Position ) ) )
+      then adopt( defend(UnrealID) ) 
+      + delete( received( target(UnrealID, Name, Team, Position) ) ).
+
 		% Go to the bot to defend if further away than 100
 		% todo: use the path of the bot
 		if bel( a-goal(defend(UnrealID)), distance(UnrealID, Distance), Distance > 100, bot(UnrealID, _, _, BotLoc, _, _)), not( bel( navigation(navigating, BotLoc) ))
 			then navigate(BotLoc).	
   	
-  	if true then skip.
+  	if true
+      then skip.
   }
 }
