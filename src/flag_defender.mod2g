@@ -30,7 +30,14 @@ module flag_defender[exit=nogoals] {
 						then navigate(Position).
 		}	
 		
+		if not 
 		if bel( isStuck )
 			then respawn.
+			
+		% If there's no goal to get an item, and there's a useful item in sight, adopt a goal to go to it
+		if not(goal(getItem(_, _, _, _))), bel(item(ID, Label, ItemType, Position), usefulItem(Label, ItemType))
+			then adopt( getItem(ID, Label, ItemType, Position) ).
+
+	
   }
 }
