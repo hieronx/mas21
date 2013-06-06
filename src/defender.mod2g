@@ -14,16 +14,16 @@ module defender[exit=noaction] {
 
     % If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
     % then the previous target  a goal is set to kill this person
-    if bel( received( target(UnrealID, Name, Team, Position ) ) ), a-goal( defend(OldUnrealID) )
+    if bel( received( target(UnrealID ) ) ), a-goal( defend(OldUnrealID) )
       then drop( defend(OldUnrealID) ) 
-      + delete( received( target(UnrealID, Name, Team, Position) ) ) 
+      + delete( received( target(UnrealID) ) ) 
       + adopt( defend(UnrealID) ).
 
     % If a killtarget is received from the manager and there was no previous killtarget
     % then adopt the goal of killing the person and delete the received from beliefs
-    if bel( received( target(UnrealID, Name, Team, Position ) ) )
+    if bel( received( target(UnrealID ) ) )
       then adopt( defend(UnrealID) ) 
-      + delete( received( target(UnrealID, Name, Team, Position) ) ).
+      + delete( received( target(UnrealID) ) ).
 
 		% Go to the bot to defend if further away than 100
 		% todo: use the path of the bot
