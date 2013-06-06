@@ -1,7 +1,7 @@
 environment {
 	env = "goal-ut2004-environment-3.5.2-SNAPSHOT.jar".
 	init = [ 	
-		botNames = ["Jeroen", "Carosi", "Robbert", "Alexander"],
+		botNames = ["Borat", "Osama Bin Laden", "Justin Bieber", "Dora"],
 		visualizer = "rmi://127.0.0.1:1099",
 		botServer = "ut://127.0.0.1:3000",
 		controlServer = "ut://127.0.0.1:3001",
