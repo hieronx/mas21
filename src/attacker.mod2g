@@ -17,21 +17,21 @@ module attacker[exit=nogoals] {
 		if bel( received(target(UnrealID ))), a-goal(kill(OldUnrealID) )
 				then drop( kill(OldUnrealID) ) 
 				+ delete( received(target(UnrealID)) ) 
-				+ adopt( kill(UnrealID, Name, Team, Modules) ).
+				+ adopt( kill(UnrealID) ).
 
 		% If a killtarget is received from the manager and there was no previous killtarget
 		% then adopt the goal of killing the person and delete the received from beliefs
 		if bel( received( target(UnrealID ) ) )
 			then adopt( kill(UnrealID) ) 
-			+ delete( received( target(UnrealID, Name, Team, Position) ) ).
+			+ delete( received( target(UnrealID) ) ).
 
 		% If we see the target we need to kill
 		% then shoot on this target 
-		if a-goal( kill(UnrealID, Name, Team, Modules)), bel(bot(UnrealID,_ ,_ ,_ ,_ ,_))
+		if a-goal( kill(UnrealID)), bel(bot(UnrealID,_ ,_ ,_ ,_ ,_))
 			then shoot(enemyFlagCarrier).
 
 		% If we don't see the enemy flag carrier, navigate to him (does this work?)
-		if a-goal( kill(UnrealID, Name, Team, Modules)), bel(not(bot(UnrealID,_ ,_ ,_ ,_ ,_)))
+		if a-goal( kill(UnrealID)), bel(not(bot(UnrealID,_ ,_ ,_ ,_ ,_)))
 			then navigate(UnrealID).
 
 		% If we dont see the enemy flag carrier, navigate to the enemy base
