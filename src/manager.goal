@@ -122,7 +122,11 @@ main module {
       delete( targetWasSent(Defender, FlagCarrier, OtherScenario) ).
 
     % If there's a needed role and a useless agent which can have it (that already has a role), update its role
-    if bel( scenario(Scenario), needRole(Scenario, Role), uselessAgent(Scenario, Agent), canHaveRole(Scenario, Agent, Role), role(Agent, OldRole) ) then
+    if bel( scenario(Scenario),
+            needRole(Scenario, Role),
+            uselessAgent(Scenario, Agent),
+            canHaveRole(Scenario, Agent, Role),
+            role(Agent, OldRole) ) then
       send(Agent, role(Role))
       + delete( role(Agent, OldRole) )
       + insert( role(Agent, Role) ).
@@ -138,6 +142,13 @@ main module {
     if bel( scenario(Scenario), needRole(Scenario, Role), uselessAgent(Scenario, Agent), canHaveRole(Scenario, Agent, Role) ) then
       send(Agent, role(Role))
       + insert( role(Agent, Role) ).
+
+    if bel( flagState(Team, home), flag(Team, OldHolder, OldPosition) ) then
+      delete( flag(Team, OldHolder, OldPosition) ).
+
+    if bel( flagState(Team, dropped), flag(Team, OldHolder, OldPosition) ) then
+      delete( flag(Team, OldHolder, OldPosition) )
+      + insert( flag(Team, none, OldPosition) ).
 
     if bel( scenario(theirFlagTaken), role(FlagCarrier, flag_capturer), role(Defender, defender), scenario(Scenario), not(targetWasSent(Defender, FlagCarrier, Scenario)) ) then
       send(Defender, target(FlagCarrier))
@@ -203,6 +214,10 @@ event module {
     %%%
      % How to respond to scenarios which occur
      %%
+    % if all flags are home, go to the default scenario
+      if bel( ownTeam(Team), flagState(Team, home), otherTeam(OtherTeam), flagState(OtherTeam, home), scenario(OldScenario), not(scenario(default)) )
+        then delete( scenario(OldScenario) )
+           + insert( scenario(default) ).
 
     % Our flag has been taken
       forall bel( ownTeam(Team), flagState(Team, held), scenario(OldScenario), not(scenario(ourFlagTaken)) ) do
@@ -217,6 +232,6 @@ event module {
     % Both flags have been taken
       forall bel( not(flagState(_, home)), not(flagState(_, dropped)), scenario(OldScenario), not(scenario(bothFlagsTaken)) ) do
         delete( scenario(OldScenario) )
-        + insert( scenario(bothFlagTaken) ).
+        + insert( scenario(bothFlagsTaken) ).
   }
 }

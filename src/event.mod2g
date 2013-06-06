@@ -20,7 +20,7 @@ event module {
 		forall bel( status(OldHealth, OldArmour, OldAdrenaline, OldCombo),  percept(status(Health, Armour, Adrenaline, Combo)) )
 			do delete( status(OldHealth, OldArmour, OldAdrenaline, OldCombo) )
 			+ insert( status(Health, Armour, Adrenaline, Combo) )
-			+ sendonce(manager, status(Health, Armour, Adrenaline, Combo) ).
+			+ send(manager, status(Health, Armour, Adrenaline, Combo) ).
 		
 		% updated ammo
 		forall bel( percept( weapon(WeaponType, Ammo, AltAmmo) ), weapon(WeaponType, OldAmmo, OldAltAmmo))
@@ -48,14 +48,14 @@ event module {
 		forall bel( percept( score(Kills, Deaths, Suicides) ), score(OldKills, OldDeaths, OldSuicides) )
 			do delete( score(OldKills, OldDeaths, OldSuicides))
 			+ insert( score(Kills, Deaths, Suicides))
-			+ sendonce( manager, score(Kills, Deaths, Suicides) ).
+			+ send( manager, score(Kills, Deaths, Suicides) ).
 
 		% If the orientation was changed, delete the old orientation from the belief base
 		% and insert the new one.
 		forall bel( percept( orientation(Location, Rotation, Velocity) ), orientation(LocationOld, RotationOld, VelocityOld) )
 			do delete( orientation(LocationOld, RotationOld, VelocityOld))
 			+ insert( orientation(Location, Rotation, Velocity))
-			+ sendonce( manager, location(Location) ).
+			+ send( manager, location(Location) ).
 
 		% Keep track of the current weapon
 		forall bel( percept( currentWeapon(WeaponType, FireMode) ), currentWeapon(OldWeaponType, OldFireMode) )
@@ -75,13 +75,13 @@ event module {
 		forall bel( percept( flagState(Team, FlagState) ), flagState(Team, OldFlagState) )
 			do delete( flagState(Team, OldFlagState) ) +
 			insert( flagState(Team, FlagState) )
-			+ sendonce( manager, flagState(Team, FlagState) ).
+			+ send( manager, flagState(Team, FlagState) ).
 		
 		% flag percept
 		% If it percepts a flag it doesn't have in its belief base, add it and send it to the manager
 		forall bel( percept( flag(Team, HolderUnrealID, Position) ), not(flag(Team, HolderUnrealID, Position)) )
 			do insert( flag(Team, HolderUnrealID, Position) ) 
-			+ sendonce(manager, flag(Team, HolderUnrealID, Position)).
+			+ send(manager, flag(Team, HolderUnrealID, Position)).
 
 		% If it doesn't percept a flag it has in its belief base, remove it
 		forall bel( percept( not(flag(Team, HolderUnrealID, Position)) ), flag(Team, HolderUnrealID, Position) )
@@ -109,6 +109,7 @@ event module {
 		forall bel( received(manager, role(Role)) )
 			do delete( received(manager, role(Role)) )
 			+  insert( role(Role) ).
+
 
 	}
 }
