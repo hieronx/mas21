@@ -2,45 +2,50 @@ module flag_defender[exit=nogoals] {
   program {
 		if bel( not(role(flag_defender)) ) 
 				then exit-module. 
-				
-  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-  	if bel( flag(_, none, _) )
-		  then seeFlag.
-		  
+					
+		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+		if bel( flag(_, none, _) )
+			  then seeFlag.
+			  
 		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
 		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
 			then combo(Combo).
-			
-		if bel(ownTeam(Team), flagState(Team, home), distance(BasePos, Distance), base(Team, BasePos), Distance > 200 )
-				then navigate(BasePos).		
 		
-		% if there's a goal to get an item and the distance from the base towards the item is < 500 , check if it's still valid and then go to it
-		if goal( getItem(ID, Label, ItemType, Position) ), bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance < 500 )
+		if bel( isStuck )
+			then respawn.
+			
+			% if there's a goal to get an item and the distance from the base towards the item is < 500 , check if it's still valid and then go to it
+		if goal( getItem(ID, Label, ItemType, Position) )
 				then {
 					% don't go to the item if we don't need it anymore
-					if bel( not(usefulItem(Label, ItemType)) )
-						then drop(getItem(ID, Label, ItemType, Position)).
+					%if bel( not(usefulItem(Label, ItemType)) )
+					%	then drop(getItem(ID, Label, ItemType, Position)).
 
 					% don't go to the item if there's no item anymore
 					if bel( not(item(ID, Label, ItemType, Position)) )
 						then drop(getItem(ID, Label, ItemType, Position)).
 
 					% don't go to the item if the distance from the base towards the item is > 500
-					if bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance > 500  )
-						then drop(getItem(ID, Label,ItemType, Position)).
+					%if bel( ownTeam(Team), base(Team,BasePos), manhattanDistance(Position,BasePos, Distance), Distance > 500  )
+					%	then drop(getItem(ID, Label,ItemType, Position)).
 					
 					% otherwise, go to the item
 					if not(bel( navigation(navigating, Position) ))
 						then navigate(Position).
-		}	
+		}
+			
+		 %if the distance towards the homebase is bigger than 1500, return to homebase
+		if bel(ownTeam(Team), flagState(Team, home), distance(BasePos, Distance), base(Team, BasePos), Distance > 1500 )
+				then navigate(BasePos).		
 		
-		if bel( isStuck )
-			then respawn.
+	
 			
 		% If there's no goal to get an item, and there's a useful item in sight, adopt a goal to go to it
-		if not(goal(getItem(_, _, _, _))), bel(item(ID, Label, ItemType, Position), usefulItem(Label, ItemType))
-			then adopt( getItem(ID, Label, ItemType, Position) ).
+		if not(goal(getItem(_, _, _, _))), bel(item(UnrealID, Label, ItemType, Position))
+			then adopt( getItem(UnrealID, Label, ItemType, Position) ).
 
-	
+		if not(goal(getItem(_, _, _, _))), bel( pickup(UnrealID,Label, ItemType), navPoint(UnrealID,Position, _), ownTeam(Team), 
+		base(Team, BasePos), manhattanDistance(Position, BasePos, Distance), Distance < 1500) 
+			then adopt (  getItem(UnrealID, Label, ItemType, Position)).
   }
 }
