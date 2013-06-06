@@ -35,6 +35,8 @@ module held[exit=always] {
 			then navigate(BasePos).
 			
 		% If another bot is holding the flag defend that bot, that bot will get a new role from the manager.
+		% If no role change go to other base
+		if true then home.
   }
 }
 
