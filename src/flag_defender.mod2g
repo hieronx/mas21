@@ -34,7 +34,6 @@ module flag_defender[exit=nogoals] {
 						then navigate(Position).
 		}	
 		
-		if not 
 		if bel( isStuck )
 			then respawn.
 			
