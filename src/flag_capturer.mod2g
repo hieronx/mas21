@@ -10,7 +10,7 @@ module flag_capturer[exit=always] {
 
 	% if a usefull item is close then pickup that item
 	if bel(	neededItem(Label, ItemType), item(UnrealID, Label, ItemType, _), distance(UnrealID, Distance), Distance < 1500 )
-		navigate(UnrealID).
+		then navigate(UnrealID).
 	
     % Modules for the three possible flagstates.
   	if bel( otherTeam(Team), flagState(Team, home) )
