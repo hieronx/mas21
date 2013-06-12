@@ -103,7 +103,7 @@ goodComboTiming(speed) :- holding(flag).
 goodComboTiming(speed) :- flag(_, none, _).
 
 % close to the enemy flag
-goodComboTiming(speed) :- otherTeam(Team), base(Team, BasePos), distance(BasePos, Distance), Distance < 400.
+goodComboTiming(speed) :- otherTeam(Team), base(Team, BasePos), distance(BasePos, Distance), Distance < 2000.
 	
 % use beserk when:
 % you see a enemy bot
