@@ -65,6 +65,10 @@ init module {
 			do insert(game(GameType, Map, GoalScore, TimeLimit))
 			+ sendonce(manager, game(GameType, Map, GoalScore, TimeLimit)).
 		
+		% specify a look preference
+		if true then look([enemyFlagCarrier, nearestEnemy, friendlyFlagCarrier]).
+		% specify a shoot preference
+		if true then shoot([enemyFlagCarrier, nearestEnemy]).
 	}
 	actionspec{
 		% Durative
@@ -127,7 +131,18 @@ init module {
 			
 			% todo: prefer (weapon)
 			
-			% todo: look
+			% look, specify priority of things to look at
+			% none, nearestEnemy, nearestFriendly, nearestFriendlyWithLinkGun,
+			% enemyFlagCarrier, friendlyFlagCarrier, PlayerID, location(X, Y, Z)
+			% pre and postconditions not neccesary
+			look(TargetLabel) {
+				pre {
+					true
+				}
+				post {
+					true
+				}
+			}
 
 		% Instantaneous
 			% Respawn is an instantaneous action with no pre-conditions,
