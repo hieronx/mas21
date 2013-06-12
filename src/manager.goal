@@ -173,8 +173,8 @@ event module {
         do delete( received( Agent, status(Health, Armour, Adrenaline, Combo) ), status(Agent, OldHealth, OldArmour, OldAdrenaline, OldCombo))
         + insert( status(Agent, Health, Armour, Adrenaline, Combo) ).
 
-       forall bel( received( Agent, status(Health, Armour, Andrenaline, Combo) ), not(status(Agent, _, _, _, _)))
-       	do insert( status(Agent, Health, Armour, Andrenaline, Combo) ).
+       forall bel( received( Agent, status(Health, Armour, Adrenaline, Combo) ), not(status(Agent, _, _, _, _)))
+       	do insert( status(Agent, Health, Armour, Adrenaline, Combo) ).
 
     % location percept
       % If it receives new information about a players' location, add it to the belief base
