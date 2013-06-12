@@ -17,8 +17,8 @@ goodWeapon(rocket_launcher).
 neededItem(ammo, flak_cannon)        :- weapon(flak_cannon, Ammo, _),    Ammo < 18.
 neededItem(ammo, rocket_launcher)    :- weapon(rocket_launcher, Ammo, _),Ammo < 15.
 
-% Andrenaline is useful when we don't have 100 yet
-usefulItem(andrenaline, andrenaline) :- status(_, _, Adrenaline, _), Adrenaline < 100.
+% Adrenaline is useful when we don't have 100 yet
+usefulItem(adrenaline, adrenaline) :- status(_, _, Adrenaline, _), Adrenaline < 100.
 
 % Pick up health, the different pills have different limits
 usefulItem(health, mini_health)      :- status(Health, _, _, _), Health < 199.
@@ -57,10 +57,10 @@ holdingFlag :- flag(_, HolderUnrealID, _), self(HolderUnrealID, _, _).
 
 % Calculate distance from point A to point B
 manhattanDistance(A, B, Distance) :-
-	location(X1, Y1, _) = A,
-	location(X2, Y2, _) = B,
-	Dx is abs(X1 - X2), Dy = abs(Y1 - Y2),
-	Distance is Dx + Dy.
+	location(X1, Y1, Z1) = A,
+	location(X2, Y2, Z2) = B,
+	Dx is abs(X1 - X2), Dy = abs(Y1 - Y2), Dz = abs(Z1 - Z2),
+	Distance is Dx + Dy + Dz.
 
 % Calculate the distance from this agent to object UnrealID
 distance(UnrealID, Distance) :-
