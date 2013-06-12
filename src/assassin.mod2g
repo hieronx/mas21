@@ -14,6 +14,9 @@ module assassin[exit=nogoals,focus=new] {
 		% 5 is randomly chosen, might need improvement
 		if bel( isStuck )
 			then respawn.
+	  
+	if bel( not( hasGoodWeapon ) )
+		then getWeapon.
 
 		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
 		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))

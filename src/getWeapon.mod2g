@@ -1,7 +1,4 @@
 module getWeapon[exit=nogoals,focus=new] {
-	knowledge {
-		hasGoodWeapon :- goodWeapon(Weapon), weapon(Weapon, _, _).
-	}
 	
 	goals {
 		hasGoodWeapon.

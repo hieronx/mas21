@@ -18,6 +18,9 @@ module flag_defender[exit=nogoals] {
 		
 		if bel( isStuck )
 			then respawn.
+	  
+		if bel( not( hasGoodWeapon ) )
+			then getWeapon.
 			
 		% if there's a goal to get an item and the distance from the base towards the item is < 500 , check if it's still valid and then go to it
 		if goal( getItem(ID, Label, ItemType, Position) )

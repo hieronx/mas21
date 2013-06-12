@@ -1,3 +1,5 @@
+hasGoodWeapon :- goodWeapon(Weapon), weapon(Weapon, _, _).
+
 % Pick up health, the different pills have different limits
 neededItem(health, mini_health)      :- status(Health, _, _, _), Health < 20.
 
