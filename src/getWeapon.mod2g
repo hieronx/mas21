@@ -6,7 +6,7 @@ module getWeapon[exit=nogoals,focus=new] {
 	
 	program {
 		% Adopt goal to get a good weapon.
-		if not(hasGoodWeapon, goal(getItem(_, _, _, _))), bel(item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
+		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, Position) ).
 		
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
