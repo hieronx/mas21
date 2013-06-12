@@ -8,6 +8,10 @@ module flag_capturer[exit=always] {
   	if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
   		then combo(Combo).
 
+  	% respawn if stuck
+    if bel( isStuck )
+      then respawn.
+
 	% if a usefull item is close then pickup that item
 	if bel(	neededItem(Label, ItemType), item(UnrealID, Label, ItemType, _), distance(UnrealID, Distance), Distance < 1500 )
 		then navigate(UnrealID).
