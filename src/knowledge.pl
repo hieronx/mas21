@@ -10,7 +10,7 @@ neededItem(armor, small_armor)       :- status(_, Armour, _, _), Armour < 50.
 neededItem(armor, super_armor)       :- status(_, Armour, _, _), Armour < 150.
 
 % Need weapons we don't have a good weapon yet
-neededItem(weapon, ItemType)         :- not(weapon(ItemType,_,_)), goodWeapon(ItemType), not(weapon(ItemType, _, _)).
+neededItem(weapon, ItemType)         :- not(weapon(ItemType,_,_)), goodWeapon(Good), not(weapon(Good, _, _)).
 
 goodWeapon(flak_cannon).
 goodWeapon(rocket_launcher).

@@ -5,9 +5,12 @@ module getWeapon[exit=nogoals,focus=new] {
 	}
 	
 	program {		
-		% Adopt goal to get a good weapon.
+		% Adopt goal to get a good weapon in sight.
 		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, Position) ).
+		% Adopt goal to get a good weapon at pickup.
+		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), pickup(UnrealID, weapon, ItemType), neededItem(weapon, ItemType))
+			then adopt( getItem(UnrealID, weapon, ItemType, pickup) ).
 		
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
 		if bel( flag(_, none, _) )
@@ -37,8 +40,12 @@ module getWeapon[exit=nogoals,focus=new] {
 				then drop(getItem(ID, Label, ItemType, Position)).
 
 			% Otherwise, go to the item
-			if not(bel( navigation(navigating, Position) ))
+			if not(bel( navigation(navigating, Position), position =/= pickup ))
 				then navigate(Position).
+				
+			% Otherwise, go to the item
+			if not(bel( navigation(navigating, Position) ))
+				then navigate(ID).
 		}
 	
 	}				
