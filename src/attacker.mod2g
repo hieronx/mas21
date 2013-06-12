@@ -1,42 +1,25 @@
 module attacker[exit=nogoals] {
   program {
-		% If role changes then exit module
-		if bel( not(bel(role(attacker))) ), a-goal( kill(UnrealID, Name, Team, Modules) )
-			then drop( kill(UnrealID, Name, Team, Modules) ) + exit-module.
-			
-		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
-		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
-			then combo(Combo).
+		% also exit without a target
+		if not( bel( role(attacker)) )
+			then exit-module.
+		
+    % If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+    if bel( flag(_, none, _) )
+      then seeFlag.
 
-  	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-  	if bel( flag(_, none, _) )
-		  then seeFlag.
+    % if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+    if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+      then combo(Combo).
+    
+    if bel( isStuck )
+      then respawn.
 
-		% If the agent already has a goal to kill a bot but receives another message from the manager to kill someone else
-		% then the previous target  a goal is set to kill this person
-		if bel( received(target(UnrealID ))), a-goal(kill(OldUnrealID) )
-				then drop( kill(OldUnrealID) ) 
-				+ delete( received(target(UnrealID)) ) 
-				+ adopt( kill(UnrealID) ).
-
-		% If a killtarget is received from the manager and there was no previous killtarget
-		% then adopt the goal of killing the person and delete the received from beliefs
-		if bel( received( target(UnrealID ) ) )
-			then adopt( kill(UnrealID) ) 
-			+ delete( received( target(UnrealID) ) ).
-
-		% If we see the target we need to kill
-		% then shoot on this target 
-		if a-goal( kill(UnrealID)), bel(bot(UnrealID,_ ,_ ,_ ,_ ,_))
-			then shoot(enemyFlagCarrier).
-
-		% If we don't see the enemy flag carrier, navigate to him (does this work?)
-		if a-goal( kill(UnrealID)), bel(not(bot(UnrealID,_ ,_ ,_ ,_ ,_)))
-			then navigate(UnrealID).
-
-		% If we dont see the enemy flag carrier, navigate to the enemy base
-		% because that is the most likely place for him to be.
-		if bel( not(navigation(navigating, _)), otherTeam(Team), base(Team, BasePos) )
-			then navigate(BasePos).
+    %if the distance towards the homebase is bigger than 1500, return to homebase
+    if bel(otherTeam(Team), base(Team, BasePos), not(navigation(navigating, BasePos)))
+        then navigate(BasePos).
+  	
+  	if true
+      then skip.
   }
 }
