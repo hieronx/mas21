@@ -1,0 +1,48 @@
+module getWeapon[exit=nogoals,focus=new] {
+	knowledge {
+		hasGoodWeapon :- goodWeapon(Weapon), weapon(Weapon, _, _).
+	}
+	
+	goals {
+		hasGoodWeapon.
+	}
+	
+	program {
+		% Adopt goal to get a good weapon.
+		if not(hasGoodWeapon, goal(getItem(_, _, _, _))), bel(item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
+			then adopt( getItem(UnrealID, weapon, ItemType, Position) ).
+		
+		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
+		if bel( flag(_, none, _) )
+			then seeFlag.
+
+		% Respawn the agent if it believes it's stuck on the map.
+		% 5 is randomly chosen, might need improvement
+		if bel( isStuck )
+			then respawn.
+
+		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
+		if bel(status(_, _, 100, _), usefullCombo(Combo), goodComboTiming(Combo))
+			then combo(Combo).
+
+		% If we see a flag(own or enemy) on the ground, grab/return it
+		if bel( not(navigation(nagivating, _)), flag(Team, none, Position), not(flagState(Team, home)) )
+			then navigate(Position).
+
+		% If there's a goal to get an item, check if it's still valid and then go to it
+		if goal( getItem(ID, Label, ItemType, Position) ) then {
+			% Don't go to the item if we don't need it anymore
+			if bel( not(usefulItem(Label, ItemType)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Don't go to the item if there's no item anymore
+			if bel( not(item(ID, Label, ItemType, Position)) )
+				then drop(getItem(ID, Label, ItemType, Position)).
+
+			% Otherwise, go to the item
+			if not(bel( navigation(navigating, Position) ))
+				then navigate(Position).
+		}
+	
+	}				
+}
