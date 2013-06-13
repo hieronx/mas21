@@ -9,10 +9,10 @@ module getWeapon[exit=nogoals,focus=new] {
 			then exit-module.
 			
 		% Adopt goal to get a good weapon in sight.
-		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
+		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), item(UnrealID, weapon, ItemType, Position), goodWeapon(ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, Position) ).
 		% Adopt goal to get a good weapon at pickup.
-		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), pickup(UnrealID, weapon, ItemType), neededItem(weapon, ItemType))
+		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, pickup) ).
 		
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
@@ -35,19 +35,19 @@ module getWeapon[exit=nogoals,focus=new] {
 		% If there's a goal to get an item, check if it's still valid and then go to it
 		if goal( getItem(ID, Label, ItemType, Position) ) then {
 			% Don't go to the item if we don't need it anymore
-			if bel( not(usefulItem(Label, ItemType)) )
-				then drop(getItem(ID, Label, ItemType, Position)).
+			%if bel( not(usefulItem(Label, ItemType)) )
+			%	then drop(getItem(ID, Label, ItemType, Position)).
 
 			% Don't go to the item if there's no item anymore
-			if bel( not(item(ID, Label, ItemType, Position)) )
-				then drop(getItem(ID, Label, ItemType, Position)).
+			%if bel( not(item(ID, Label, ItemType, Position)) )
+			%	then drop(getItem(ID, Label, ItemType, Position)).
 
 			% Otherwise, go to the item
-			if not(bel( navigation(navigating, Position), position =/= pickup ))
-				then navigate(Position).
+			%if not(bel( navigation(navigating, Position), position =/= pickup ))
+			%	then navigate(Position).
 				
 			% Otherwise, go to the item
-			if not(bel( navigation(navigating, Position) ))
+			if not(bel( navigation(navigating, ID) ))
 				then navigate(ID).
 		}
 	
