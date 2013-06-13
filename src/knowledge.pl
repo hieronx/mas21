@@ -119,8 +119,8 @@ seeDroppedFlag :- ownTeam(Team), flag(Team, none, _), not(flagState(Team, home))
 canGetItem(UnrealID, Label, ItemType, Position, Distance) :- 
 	item(UnrealID, Label, ItemType, Position),
 	usefulItem(Label, ItemType),
-	distance(Position, Distance), Distance < 250.
+	distance(Position, Distance), Distance < 300.
 
 closestUsefulItem(UnrealID, Label, ItemType, Position) :-
 	canGetItem(UnrealID, Label, ItemType, Position, Distance),
-	not(canGetItem(_, _, _, _, Distance2), Distance > Distance2).
+	not((canGetItem(_, _, _, _, Distance2), Distance > Distance2)).
