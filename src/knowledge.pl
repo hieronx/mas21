@@ -1,7 +1,7 @@
 hasGoodWeapon :- goodWeapon(Weapon), weapon(Weapon, _, _).
 
 % Pick up health, the different pills have different limits
-neededItem(health, mini_health)      :- status(Health, _, _, _), Health < 20.
+neededItem(health, mini_health)      :- status(Health, _, _, _), Health < 200.
 
 % Don't use the super health pack for just 20 health
 neededItem(health, super_health)     :- status(Health, _, _, _), Health < 150.
