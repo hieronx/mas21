@@ -4,7 +4,10 @@ module getWeapon[exit=nogoals,focus=new] {
 		hasGoodWeapon.
 	}
 	
-	program {		
+	program {	
+		if bel( hasGoodWeapon )
+			then exit-module.
+			
 		% Adopt goal to get a good weapon in sight.
 		if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), item(UnrealID, weapon, ItemType, Position), neededItem(weapon, ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, Position) ).
