@@ -6,6 +6,7 @@
 #import "defender.mod2g".
 #import "assassin.mod2g".
 #import "getWeapon".
+#import "getItem.mod2g".
 
 main module {
 	knowledge {

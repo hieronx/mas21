@@ -18,9 +18,8 @@ module defender[exit=noaction] {
 	if bel( not( hasGoodWeapon ) )
 		then getWeapon.
 
-
-    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position), not(navigation(navigating, Position)) )
-      then navigate(Position).
+    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position) )
+      then getItem.
 
     %if the distance towards the homebase is bigger than 1500, return to homebase
     if bel(ownTeam(Team), base(Team, BasePos), not(navigation(navigating, BasePos)))

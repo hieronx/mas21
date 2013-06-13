@@ -1,0 +1,22 @@
+module getItem[exit=nogoals, focus=new] {
+  program {
+    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position) ), not(goal(getItem(_, _, _, _)) )
+      then adopt(getItem(UnrealID, Label, ItemType, Position)).
+
+    if goal( getItem(UnrealID, Label, ItemType, Position) )
+      then {
+
+        % if the item is not useful / too far away, don't go to it
+        if bel( not(canGetItem(UnrealID, Label, ItemType, Position)) )
+          then drop(getItem(UnrealID, Label, ItemType, Position)).
+
+        % if we're there, go to another one?
+        if bel( distance(Position, Distance), Distance < 50 )
+          then drop(getItem(UnrealID, Label, ItemType, Position)).
+
+        % otherwise, go to the item
+        if bel( not(navigation(navigating, Position)) )
+          then navigate(Position).
+      }
+  }
+}

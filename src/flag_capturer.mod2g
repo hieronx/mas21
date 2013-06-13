@@ -16,8 +16,8 @@ module flag_capturer[exit=always] {
 		then getWeapon.
 
 
-    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position), not(navigation(navigating, Position)) )
-      then navigate(Position).
+    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position) )
+      then getItem.
 	
     % Modules for the three possible flagstates.
   	if bel( otherTeam(Team), flagState(Team, home) )
