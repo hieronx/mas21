@@ -15,9 +15,9 @@ module flag_capturer[exit=always] {
 	if bel( not( hasGoodWeapon ) )
 		then getWeapon.
 
-	% if a usefull item is close then pickup that item
-	if bel(	neededItem(Label, ItemType), item(UnrealID, Label, ItemType, _), distance(UnrealID, Distance), Distance < 1500 )
-		then navigate(UnrealID).
+
+    if bel( closestUsefulItem(UnrealID, Label, ItemType, Position), not(navigation(navigating, Position)) )
+      then navigate(Position).
 	
     % Modules for the three possible flagstates.
   	if bel( otherTeam(Team), flagState(Team, home) )
