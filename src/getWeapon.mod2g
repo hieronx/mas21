@@ -1,7 +1,7 @@
 module getWeapon[exit=nogoals,focus=new] {
 	knowledge {
-		closestPossiblePickup(UnrealID) :- distance(UnrealID, Distance), !, possiblePickup(UnrealID2, D2), D2<Distance.
-		possiblePickup(UnrealID, Distance) :- pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType).
+		closestPossiblePickup(UnrealID) :- possiblePickup(UnrealID, Distance), \+(possiblePickup(_, D2), D2<Distance).
+		possiblePickup(UnrealID, Distance) :- pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType), distance(UnrealID, Distance).
 	}
 	
 	goals {
@@ -18,7 +18,7 @@ module getWeapon[exit=nogoals,focus=new] {
 		% Adopt goal to get a good weapon at pickup.
 		% if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType))
 		%	then adopt( getItem(UnrealID, weapon, ItemType, pickup) ).
-		 if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), possiblePickup(UnrealID, _), pickup(UnrealID, weapon, ItemType))
+		 if not(goal(getItem(_, _, _, _))), bel(not(hasGoodWeapon), closestPossiblePickup(UnrealID), pickup(UnrealID, weapon, ItemType))
 			then adopt( getItem(UnrealID, weapon, ItemType, pickup) ).
 		
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
