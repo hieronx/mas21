@@ -1,7 +1,7 @@
 module flag_capturer[exit=always] {
   program {
   	% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-  	if bel( flag(_, none, _) )
+  	if bel( seeDroppedFlag )
 		  then seeFlag.
 			
   	% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo

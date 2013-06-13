@@ -16,7 +16,7 @@ module getWeapon[exit=nogoals,focus=new] {
 			then adopt( getItem(UnrealID, weapon, ItemType, pickup) ).
 		
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-		if bel( flag(_, none, _) )
+		if bel( seeDroppedFlag )
 			then seeFlag.
 
 		% Respawn the agent if it believes it's stuck on the map.

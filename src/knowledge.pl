@@ -110,3 +110,7 @@ goodComboTiming(speed) :- otherTeam(Team), base(Team, BasePos), distance(BasePos
 % use beserk when:
 % you see a enemy bot
 goodComboTiming(beserk) :- otherTeam(Team), bot(_, _, Team, _, _, _).
+
+
+seeDroppedFlag :- otherTeam(Team), flag(Team, none, _).
+seeDroppedFlag :- ownTeam(Team), flag(Team, none, _), not(flagState(Team, home)).

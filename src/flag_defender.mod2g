@@ -1,6 +1,5 @@
 module flag_defender[exit=nogoals] {
 	knowledge {
-		#import "knowledge.pl".
 		% true if an item is within 1500 of the base
 		itemInRange(Position) :- navPoint(Position, PointLoc, _), ownTeam(Team), base(Team, BasePos), manhattanDistance(PointLoc, BasePos, Distance), Distance > 1500.
 	}
@@ -9,7 +8,7 @@ module flag_defender[exit=nogoals] {
 				then exit-module. 
 					
 		% If the bot sees any dropped flag, or the enemy flag in their base go to module seeFlag
-		if bel( flag(_, none, _) )
+		if bel( seeDroppedFlag )
 			  then seeFlag.
 			  
 		% if adrenaline is 100, there is a usefull combo and this is a good timing for that combo
