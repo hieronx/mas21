@@ -1,9 +1,11 @@
 module getWeapon[exit=nogoals,focus=new] {
+	knowledge {
+		closestPossiblePickup(UnrealID) :- distance(UnrealID, Distance), not(possiblePickup(UnrealID2, D2), D2<Distance).
+		possiblePickup(UnrealID, Distance) :- pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType).
+	}
 	
 	goals {
 		hasGoodWeapon.
-		closestPossiblePickup(UnrealID) :- distance(UnrealID, Distance), not(possiblePickup(UnrealID2, D2), D2<Distance).
-		possiblePickup(UnrealID, Distance) :- pickup(UnrealID, weapon, ItemType), goodWeapon(ItemType).
 	}
 	
 	program {	
